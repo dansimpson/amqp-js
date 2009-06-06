@@ -1,0 +1,32 @@
+=amqp-js
+amqp-js is an attempt to bring low-latency message queuing to javascript, without the using HTTP.  amqp-js works by joining
+forces with actionscript to establish socket connections to your AMQP server.
+
+
+=Requirements
+1. AMQP Server
+	RabbitMQ: http://www.rabbitmq.com/
+	ActiveMQ: http://activemq.apache.org/
+	Qpid: http://qpid.apache.org/
+	ZeroMQ: http://www.zeromq.org/
+	I use RabbitMQ...
+2. Web Server
+3. Basic understanding of message queuing.
+
+
+=Examples
+--
+
+=Flash Policy Files (eeeek!)
+If you happen to run your AMQP server on a different server than that which you host your website, then a few extra steps
+are required to get everything working together.  Since amqp-js uses flash to bind to sockets, it's important that you
+understand how flash deals with sockets.
+
+The following article will help you understand flash policy files
+http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security_04.html
+
+Your AMQP server will need to dish out flash policy files on port 843.  Check the system directory to get access to an example
+flash policy file, a python script to host them, and an init script to daemonize the flash polciy server.
+
+=Security
+Well... I wouldn't use this for anything that requires security.  No promises.
