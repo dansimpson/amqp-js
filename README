@@ -1,5 +1,5 @@
 amqp-js
-amqp-js is an attempt to bring low-latency message queuing to javascript, without the using HTTP.
+amqp-js is an attempt to bring low-latency message queuing to javascript, without using HTTP.
 amqp-js works by joining forces with actionscript to establish socket connections to your AMQP server.
 
 
