@@ -10,14 +10,26 @@ OUTPUT_ROOT = File.dirname(__FILE__) + "/as3/org/ds/amqp"
 
 AS3_TYPES = {
   'bit' => 'Boolean',
-  'short' => 'int',
+  'short' => 'uint',
   'long' => 'uint',
-  'longlong' => 'uint',
+  'longlong' => 'Long',
   'shortstr' => 'String',
   'longstr' => 'String',
-  'table' => 'Dictionary',
-  'octet' => 'int',
+  'table' => 'FieldTable',
+  'octet' => 'uint',
   'timestamp' => 'Date'
+}
+
+AS3_BUF_METHODS = {
+  'bit' => 'Boolean',
+  'short' => 'UnsignedShort',
+  'long' => 'UnsignedInt',
+  'longlong' => 'Long',
+  'shortstr' => 'ShortString',
+  'longstr' => 'LongString',
+  'table' => 'Table',
+  'octet' => 'UnsignedByte',
+  'timestamp' => 'Timestamp'
 }
 
 

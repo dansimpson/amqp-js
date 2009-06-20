@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 package org.ds.amqp.protocol.<%=c['name'].downcase %>
 {
-	import flash.utils.Dictionary;
+	import org.ds.amqp.datastructures.*;
 	import org.ds.amqp.protocol.Method;
 	import org.ds.amqp.transport.Buffer;
 	
@@ -46,12 +46,12 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 
 		public override function writeTo(buf:Buffer):void {
 			<%- m['arguments'].each do |a| -%>
-			buf.write<%= (a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']).titlecase %>(this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower) %>);<% end if m['arguments'] %>
+			buf.write<%= AS3_BUF_METHODS[(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type'])] %>(this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower) %>);<% end if m['arguments'] %>
 		}
 		
 		public override function readFrom(buf:Buffer):void {
 			<%- m['arguments'].each do |a| -%>
-			this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %> = buf.read<%= (a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']).titlecase %>();<% end if m['arguments'] %>
+			this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %> = buf.read<%= AS3_BUF_METHODS[(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type'])] %>();<% end if m['arguments'] %>
 		}
 	}
 }

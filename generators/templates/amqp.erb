@@ -44,16 +44,6 @@ package org.ds.amqp
 		private static var classMap	:Dictionary = new Dictionary();
 		<% s['classes'].each do |c| -%>
 		classMap[<%=c['id']%>]	= <%=c['name'].titleize.gsub(/\s/,'') %>;<% end -%>
-
-		public static function get buildHeader():Buffer {
-			var buffer:Buffer = new Buffer();
-			buffer.writeUTFBytes("AMQP");
-			buffer.writeByte(1);
-			buffer.writeByte(1);
-			buffer.writeByte(PROTOCOL_MAJOR);
-			buffer.writeByte(PROTOCOL_MINOR);
-			return buffer;
-		}
 		
 		public static function getClass(id:int):MessageClass {
 			return new classMap[id]();
