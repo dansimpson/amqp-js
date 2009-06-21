@@ -3,8 +3,8 @@
 *Note: this project is not done...  I highly recommend you wait until I have a fully working demo, and a 
 documented API*
 
-+amqp-js is an attempt to bring low-latency message queuing to javascript, without using HTTP.
-+amqp-js works by joining forces with actionscript to establish socket connections to your AMQP server.
+^ amqp-js is an attempt to bring low-latency message queuing to javascript, without using HTTP.
+^ amqp-js works by joining forces with actionscript to establish socket connections to your AMQP server.
 
 
 ##AS3/Flex/Flash - Protocol implementation (Work in Progress 06/20/2009)
