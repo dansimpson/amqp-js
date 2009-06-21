@@ -1,10 +1,10 @@
 #amqp-js / amqp-flash / velveteen
 
-Note: this project is not done...  I highly recommend you wait until I have a fully working demo, and a 
-documented API
+*Note: this project is not done...  I highly recommend you wait until I have a fully working demo, and a 
+documented API*
 
-*amqp-js is an attempt to bring low-latency message queuing to javascript, without using HTTP.
-*amqp-js works by joining forces with actionscript to establish socket connections to your AMQP server.
++amqp-js is an attempt to bring low-latency message queuing to javascript, without using HTTP.
++amqp-js works by joining forces with actionscript to establish socket connections to your AMQP server.
 
 
 ##AS3/Flex/Flash - Protocol implementation (Work in Progress 06/20/2009)
@@ -26,18 +26,18 @@ Other Helpers (Doc Coming Soon)
 Observers
 Connection
 Event Types
-Diagnostics
+Diagnostics (For logging to the higher level APIs (console.log in JS) etc)
 
 
 I will be releasing the protocol implementation shortly, targetting advanced actionscripters that
-want to implement their own high-level implementation.  *The swf compiles down to 18K so far*.
+want to implement their own high-level implementation.  **The swf compiles down to 18K so far**.
 
 Thanks to Ben Hood and Aman Gupta for opening up their AMQP projects.  I have referenced both during
 the development process.
 
 
 
-##AS3/Flex/Flash - High Level Implementation (Work in Progress 06/20/2009)
+##AS3/Flex/Flash - High Level AKA Velveteen (Work in Progress 06/20/2009)
 I will also be releasing velveteen, a higher level AS3 libary.  Velveteen will abstract the protocol
 and provide the programmer with a more sensible API for the most common features.
 
