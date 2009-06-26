@@ -36,7 +36,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 	public class <%=m['name'].titleize.gsub(/\s/,'') %> extends Method
 	{
 		<%- m['arguments'].each do |a| -%>
-		public var <%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(24) %>:<%= AS3_TYPES[a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']] %>;<%- end if m['arguments'] -%>
+		public var <%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(24) %>:<%= get_type(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']) %> = <%= get_default(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']) %>;<%- end if m['arguments'] -%>
 
 		public function <%=m['name'].titlecase.gsub(/\s/,'') %>() {
 			_classId  = <%=c['id']%>;
@@ -46,12 +46,12 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 
 		public override function writeTo(buf:Buffer):void {
 			<%- m['arguments'].each do |a| -%>
-			buf.write<%= AS3_BUF_METHODS[(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type'])] %>(this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower) %>);<% end if m['arguments'] %>
+			buf.write<%= get_method(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']) %>(this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower) %>);<% end if m['arguments'] %>
 		}
 		
 		public override function readFrom(buf:Buffer):void {
 			<%- m['arguments'].each do |a| -%>
-			this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %> = buf.read<%= AS3_BUF_METHODS[(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type'])] %>();<% end if m['arguments'] %>
+			this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %> = buf.read<%= get_method(a['domain'] ? s['domains'].find{|k,v| k == a['domain']}.last : a['type']) %>();<% end if m['arguments'] %>
 		}
 	}
 }

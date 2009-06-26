@@ -8,30 +8,66 @@ s = JSON.parse(File.read(File.dirname(__FILE__) + "/amqp-0.8.json"))
 
 OUTPUT_ROOT = File.dirname(__FILE__) + "/as3/org/ds/amqp"
 
-AS3_TYPES = {
-  'bit' => 'Boolean',
-  'short' => 'uint',
-  'long' => 'uint',
-  'longlong' => 'Long',
-  'shortstr' => 'String',
-  'longstr' => 'String',
-  'table' => 'FieldTable',
-  'octet' => 'uint',
-  'timestamp' => 'Date'
+TYPE_MAP = {
+	'bit' 		=> {
+		'type'	=> 'Boolean',
+		'meth'	=> 'Bit',
+		'def'	=> 'false'
+	},
+	'short' 	=> {
+		'type'	=> 'uint',
+		'meth'	=> 'UnsignedShort',
+		'def'	=> '0'
+	},
+	'long' 		=> {
+		'type'	=> 'uint',
+		'meth'	=> 'UnsignedInt',
+		'def'	=> '0'
+	},
+	'longlong' 	=> {
+		'type'	=> 'Long',
+		'meth'	=> 'Long',
+		'def'	=> 'new Long(0,0)'
+	},
+	'shortstr' 	=> {
+		'type'	=> 'String',
+		'meth'	=> 'ShortString',
+		'def'	=> '""'
+	},
+	'longstr' 	=> {
+		'type'	=> 'String',
+		'meth'	=> 'LongString',
+		'def'	=> '""'
+	},
+	'table' 	=> {
+		'type'	=> 'FieldTable',
+		'meth'	=> 'Table',
+		'def'	=> 'new FieldTable()'
+	},
+	'octet' 	=> {
+		'type'	=> 'uint',
+		'meth'	=> 'UnsignedByte',
+		'def'	=> '0'
+	},
+	'timestamp'	=> {
+		'type'	=> 'Date',
+		'meth'	=> 'Timestamp',
+		'def'	=> 'new Date()'
+	}
 }
 
-AS3_BUF_METHODS = {
-  'bit' => 'Boolean',
-  'short' => 'UnsignedShort',
-  'long' => 'UnsignedInt',
-  'longlong' => 'Long',
-  'shortstr' => 'ShortString',
-  'longstr' => 'LongString',
-  'table' => 'Table',
-  'octet' => 'UnsignedByte',
-  'timestamp' => 'Timestamp'
-}
 
+def get_type mqtype
+	TYPE_MAP[mqtype]['type']
+end
+
+def get_method mqtype
+	TYPE_MAP[mqtype]['meth']
+end
+
+def get_default mqtype
+	TYPE_MAP[mqtype]['def']
+end
 
 def create_class c, s
   ERB.new(File.read('templates/class.erb'), nil, '<>-%').result(binding);
