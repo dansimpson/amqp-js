@@ -26,10 +26,21 @@ THE SOFTWARE.
 
 package org.ds.amqp.observers
 {
-	public class Observer
+	import flash.events.EventDispatcher;
+	
+	public class Observer extends EventDispatcher
 	{
-		public function Observer()
+		
+		protected var target:EventDispatcher = null;
+		
+		public function Observer(targetDispatcher:EventDispatcher)
 		{
+			super();
+			target = targetDispatcher;
+		}
+		
+		public function on(event:String, callback:Function):void {
+			target.addEventListener(event, callback);
 		}
 
 	}

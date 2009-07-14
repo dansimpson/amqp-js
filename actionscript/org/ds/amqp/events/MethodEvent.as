@@ -38,7 +38,6 @@ package org.ds.amqp.events
 		public function MethodEvent(method:Method)
 		{
 			super(method.toString());
-			
 			this.method = method;
 		}
 		

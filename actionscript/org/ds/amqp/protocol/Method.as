@@ -26,58 +26,48 @@ THE SOFTWARE.
 
 package org.ds.amqp.protocol
 {
-	import org.ds.amqp.connection.Connection;
-	import org.ds.amqp.diagnostics.Logger;
+	import org.ds.amqp.AMQP;
 	import org.ds.amqp.transport.Buffer;
-	import org.ds.amqp.transport.Frame;
 	
-	public class Method
+	public class Method extends Payload
 	{
 		
 		protected var _classId	:int = -1;
 		protected var _methodId	:int = -1;
+		protected var _content	:Boolean = false;
 		
-		public function Method()
-		{
+		public function Method() {
+			_type = AMQP.FRAME_METHOD;
 		}
-
-		public function get payload():Buffer {
-			
+		
+		public function writeArguments(buffer:Buffer):void {	
+		}
+		
+		public function readArguments(buffer:Buffer):void {
+		}
+		
+		public override function serialize():Buffer {
 			var buffer:Buffer = new Buffer();
-			
 			buffer.writeShort(_classId);
 			buffer.writeShort(_methodId);
-			
-			writeTo(buffer);
-			
+			writeArguments(buffer);
+			buffer.flush();
 			return buffer;
 		}
 		
-		public function writeTo(buf:Buffer):void {	
-		}
-		
-		public function readFrom(buf:Buffer):void {
-		}
-		
-		
-		public function send(c:org.ds.amqp.connection.Connection):void {
-			c.send(toFrame());
-		}
-		
-		public function toFrame():Frame {
-			return new Frame(payload);
-			
-		}
-		
+		public function deserialize(buffer:Buffer):void {
+			buffer.position = 0;
+			buffer.readShort();
+			buffer.readShort();
+			readArguments(buffer);
+		}		
+				
 		public function toString():String {
 			 return _classId + "/" + _methodId;
 		}
 		
-		public function print():void {
-			for(var k:* in this) {
-				Logger.log(k as String, this[k] as String);
-			}
-			
+		public function get hasContent():Boolean {
+			return _content;
 		}
 	}
 }

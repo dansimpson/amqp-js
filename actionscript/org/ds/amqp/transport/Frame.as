@@ -26,72 +26,61 @@ THE SOFTWARE.
 
 package org.ds.amqp.transport
 {
-	import flash.utils.IDataInput;
-	import flash.utils.IDataOutput;
-	
 	import org.ds.amqp.AMQP;
-	import org.ds.amqp.protocol.MessageClass;
+	import org.ds.amqp.protocol.Body;
+	import org.ds.amqp.protocol.Header;
 	import org.ds.amqp.protocol.Method;
+	import org.ds.amqp.protocol.Payload;
 	
 	public class Frame
 	{
-		public		var type	:int 		= AMQP.FRAME_METHOD;
-		public		var channel	:int 	 	= 0;
-		public 		var payload	:Buffer	 	= null;
-		public		var valid	:Boolean	= true;
-		public		var length	:uint		= 0;
-		
-		public function Frame(payload:Buffer=null, channel:int=0)
-		{
-			this.payload = payload;
-			this.channel = channel;
-		}
 
-		public function encode(stream:IDataOutput):void {
-            stream.writeByte(type);
-            stream.writeShort(channel);
-            stream.writeUnsignedInt(payload.length);
-            stream.writeBytes(payload);
-            stream.writeByte(AMQP.FRAME_END);
-		}
+		public		var type	:int 		= AMQP.FRAME_METHOD;
+		public		var channel	:int		= 0;
+		public 		var content	:Buffer		= null;
+		public		var valid	:Boolean	= true;
 		
-		
-		public function decode(stream:IDataInput):Boolean {
-			
-			type 	= stream.readUnsignedByte();
-			channel = stream.readUnsignedShort();
-			
-			//grab the payload
-			payload = new Buffer();
-			length	= stream.readInt();
-			
-			if(length > 0) {
-				stream.readBytes(payload, 0, length);
+		public function Frame(payload:Payload=null)
+		{
+			if(payload != null) {
+				payload.print();
+				type	= payload.frameType;
+				content = payload.serialize();
 			}
-			
-			//make sure we did everything correctly (not 100% accurate)
-			return valid = (stream.readUnsignedByte() == AMQP.FRAME_END);
 		}
 		
-		
+
 		//extracts the appropriate Method class from the frame
 		public function get method():Method {
-			if(payload != null && payload.length > 0) {
-				var instance:MessageClass = AMQP.getClass(payload.readUnsignedShort());
-				if(instance) {
-					var method:Method = instance.getMethod(payload.readUnsignedShort());
-					method.readFrom(payload);
+			if(content != null && content.length > 0) {
+				var method:Method = AMQP.getMethod(content.readUnsignedShort(), content.readUnsignedShort());
+				if(method) {
+					method.readArguments(content);
 					return method;
 				}
 			}
 			return null;
 		}
+
+		public function get header():Header {
+			if(content != null && content.length > 0) {
+				
+				var header:Header = AMQP.getClass(content.readUnsignedShort());
+				if(header) {
+					header.deserialize(content);
+					return header;
+				}
+			}
+			return null;
+		}
 		
-		//just a class helper
-		public static function decode(stream:IDataInput):Frame {
-			var frame:Frame = new Frame();
-			frame.decode(stream);
-			return frame;	
+		public function get body():Body {
+			if(content != null && content.length > 0) {
+				var body:Body = new Body();
+				body.deserialize(content);
+				return body;
+			}
+			return null;
 		}
 	}
 }

@@ -26,50 +26,100 @@ THE SOFTWARE.
 
 package org.ds.velveteen
 {
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	
 	import org.ds.amqp.connection.Connection;
-	import org.ds.amqp.diagnostics.Logger;
 	import org.ds.amqp.events.MethodEvent;
-	import org.ds.amqp.protocol.Exchange;
-	import org.ds.amqp.protocol.basic.Consume;
-	import org.ds.amqp.protocol.queue.Declare;
-	import org.ds.amqp.protocol.queue.DeclareOk;
+	import org.ds.amqp.events.TransmissionEvent;
+	import org.ds.amqp.protocol.Payload;
+	import org.ds.amqp.protocol.basic.BasicConsume;
+	import org.ds.amqp.protocol.basic.BasicDeliver;
+	import org.ds.amqp.protocol.queue.QueueBind;
+	import org.ds.amqp.protocol.queue.QueueDeclare;
+	import org.ds.amqp.protocol.queue.QueueDeclareOk;
+	import org.ds.amqp.transport.Frame;
+	import org.ds.amqp.transport.Transmission;
+	import org.ds.logging.Logger;
 	
 	public class Queue extends EventDispatcher
 	{
-		protected var ready	:Boolean = false;
-		protected var conn	:Connection;
-		protected var name	:String;
+		protected var ready		:Boolean = false;
+		protected var conn		:Connection;
+		protected var name		:String;
+		protected var tag		:String;
+		protected var cb		:Function;
+		
+		protected var bindings	:* = {
+		};
+		
+		protected var buffer	:Array = new Array();
 		
 		public function Queue(connection:Connection, queueName:String, options:*=null)
 		{
 			conn = connection;
 			name = queueName;
 			
-			conn.addEventListener(new DeclareOk().toString(), onQueueDeclareOk);
+			conn.addEventListener(QueueDeclareOk.EVENT, onQueueDeclareOk);
+			conn.addEventListener(BasicDeliver.EVENT, onReceive);
 			
-			var declare:Declare = new Declare();
+			var declare:QueueDeclare = new QueueDeclare();
 			declare.queue 		= name;
-			
+			declare.autoDelete	= true;
+
 			if(options) {
 				for(var k:* in options) {
 					declare[k] = options[k];
 				}
 			}
 			
-			declare.send(connection);
+			connection.sendFrame(new Frame(declare));
 		}
 		
 
 		
-		public function subscribe():void {
+		public function subscribe(callback:Function):void {
+		
+			cb = callback;
+			
+            var consume:BasicConsume = new BasicConsume();
+           	
+            consume.queue = name;
+            consume.consumerTag = name;
+            consume.noAck = true;
+            
+            if(ready) {
+            	conn.sendFrame(new Frame(consume));
+            } else {
+            	buffer.push(consume);
+            }
 		}
 		
 		public function unsubscribe():void {
 		}
 		
-		public function bind(exchange:Exchange, options:*=null):Queue {
+		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null, blockCalls:Boolean=false):Queue {
+			
+
+			var bind:QueueBind = new QueueBind();
+			bind.exchange 	= exchange.name;
+			bind.queue 		= name;
+			bind.routingKey = routingKey;
+			
+			bindings[exchange.name + "/" + routingKey] = {
+				exchange	: exchange.name,
+				routingKey	: routingKey,
+				callback	: callback,
+				blockCalls	: blockCalls
+			};
+			
+			if(ready) {
+				conn.sendFrame(new Frame(bind));
+			} else {
+				buffer.push(bind);
+			}
+			
+
 			return this;	
 		}
 		
@@ -81,21 +131,29 @@ package org.ds.velveteen
 		* Event Handlers
 		*/
 		protected function onQueueDeclareOk(e:MethodEvent):void {
+			while(buffer.length > 0) {
+				conn.sendFrame(new Frame((buffer.shift() as Payload)));
+			}
 			ready = true;
-			var r:DeclareOk = e.instance as DeclareOk;
-			Logger.log(r.consumerCount, r.messageCount, r.queue);
 		}		
 		
-		protected function onRecieve(e:MethodEvent):void {
-			if(e.instance is Consume) {
-				var c:Consume = e.instance as Consume;
-				
-				if(c.queue == name) {
-					//we have a message
+		protected function onReceive(e:Event):void {
+			
+			Logger.log("Msg Rcvd");
+			
+			var t:Transmission 	= (e as TransmissionEvent).instance;
+			var m:BasicDeliver 	= t.method as BasicDeliver;
+			var b:* 			= bindings[m.exchange + "/" + m.routingKey];
+			
+			if(b != null) {				
+				trace("Exchange Msg Rcvd");
+				b.callback(t.body.data);
+				if(b.blockCalls) {
+					return;
 				}
-				
-				//we have a message
 			}
+			
+			cb(t.body.data);
 		}
 		
 

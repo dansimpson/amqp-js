@@ -28,7 +28,7 @@ package org.ds.amqp.datastructures
 {
 	import flash.utils.ByteArray;
 	
-	import org.ds.amqp.diagnostics.Logger;
+	import org.ds.logging.Logger;
 	import org.ds.amqp.transport.Buffer;
 
 	public dynamic class FieldTable extends Object
@@ -69,6 +69,13 @@ package org.ds.amqp.datastructures
 		public function read(b:Buffer):void {
 			
 			var length	:uint		= b.readUnsignedInt();
+            
+            trace(length);
+            
+            if(length == 0) {
+            	return;
+            }
+            
             var start	:uint		= b.position;
             
             while(b.position < (start + length)) {
@@ -113,19 +120,23 @@ package org.ds.amqp.datastructures
             	
             	switch(Object(o).constructor) {
             		case String:
-           				b.writeUnsignedByte(83);
+           				b.writeByte(83);
+            			b.writeString(o);
+            			break;
+            		case LongString:
+           				b.writeByte(83);
             			b.writeLongString(o);
             			break;
             		case int:
-           				b.writeUnsignedByte(73);
-            			b.writeUnsignedShort(o);
+           				b.writeByte(73);
+            			b.writeShort(o);
             			break;
             		case Date:
-           				b.writeUnsignedByte(84);
+           				b.writeByte(84);
             			b.writeTimestamp(o);
             			break;
             		case FieldTable:
-            		    b.writeUnsignedByte(70);
+            		    b.writeByte(70);
             			b.writeTable(o);
             			break;
             		default:
@@ -148,6 +159,9 @@ package org.ds.amqp.datastructures
             		case String:
             			len += (o as String).length + 4;
 						break;
+            		case LongString:
+            			len += (o as LongString).length + 4;
+						break;
             		case int:
             			len += 4;
             			break;
@@ -168,8 +182,9 @@ package org.ds.amqp.datastructures
 		
 		
 		public function toString():String {
-			var ba:ByteArray = toByteArray();
-			return ba.readUTFBytes(ba.length);
+			return "";
+			//var ba:ByteArray = toByteArray();
+			//return ba.readUTFBytes(ba.length);
 		}
 		
 		public function toByteArray():ByteArray {

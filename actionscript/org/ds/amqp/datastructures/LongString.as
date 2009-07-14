@@ -30,8 +30,13 @@ package org.ds.amqp.datastructures
 	
 	public class LongString extends ByteArray
 	{
-		public function LongString()
+		public function LongString(source:ByteArray=null, length:uint=0)
 		{
+			super();
+			
+			if(source) {
+				writeBytes(source, 0, length == 0 ? source.length : length);
+			}
 		}
 
 	}
