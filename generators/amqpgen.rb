@@ -16,17 +16,17 @@ TYPE_MAP = {
 	},
 	'short' 	=> {
 		'type'	=> 'uint',
-		'meth'	=> 'UnsignedShort',
+		'meth'	=> 'ShortInt',
 		'def'	=> '0'
 	},
 	'long' 		=> {
 		'type'	=> 'uint',
-		'meth'	=> 'UnsignedInt',
+		'meth'	=> 'LongInt',
 		'def'	=> '0'
 	},
 	'longlong' 	=> {
 		'type'	=> 'Long',
-		'meth'	=> 'Long',
+		'meth'	=> 'LongLong',
 		'def'	=> 'new Long(0,0)'
 	},
 	'shortstr' 	=> {
@@ -46,7 +46,7 @@ TYPE_MAP = {
 	},
 	'octet' 	=> {
 		'type'	=> 'uint',
-		'meth'	=> 'UnsignedByte',
+		'meth'	=> 'Octet',
 		'def'	=> '0'
 	},
 	'timestamp'	=> {
@@ -92,13 +92,14 @@ OUTPUT_ROOT << "/protocol"
 
 s['classes'].each do |c|
   File.makedirs(OUTPUT_ROOT + "/#{c['name']}")
-  File.open(OUTPUT_ROOT + "/#{c['name'].titleize.gsub(/\s/,'')}.as", 'w') do |f|
+  File.makedirs(OUTPUT_ROOT + "/headers")
+  File.open(OUTPUT_ROOT + "/headers/#{c['name'].titleize.gsub(/\s/,'')}.as", 'w') do |f|
     f.write(ERB.new(File.read('templates/class.erb'), nil, '<>-%').result(binding))
   end
 
   
   c['methods'].each do |m|
-    File.open(OUTPUT_ROOT + "/#{c['name']}/#{m['name'].titleize.gsub(/\s/,'')}.as", 'w') do |f|
+    File.open(OUTPUT_ROOT + "/#{c['name']}/#{c['name'].titleize.gsub(/\s/,'')}#{m['name'].titleize.gsub(/\s/,'')}.as", 'w') do |f|
       f.write(ERB.new(File.read('templates/method.erb'), nil, '<>-%').result(binding))
     end
 

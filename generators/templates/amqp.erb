@@ -29,10 +29,12 @@ THE SOFTWARE.
 package org.ds.amqp
 {
 	import flash.utils.Dictionary;
+	import org.ds.amqp.protocol.Header;
+	import org.ds.amqp.protocol.Method;
+	import org.ds.amqp.protocol.headers.*;
+	<% s['classes'].each do |c| -%>
+	import org.ds.amqp.protocol.<%=c['name'].downcase.gsub(/\s/,'') %>.*;<% end -%>
 	
-	import org.ds.amqp.protocol.*;
-	import org.ds.amqp.transport.*;
-
 	public class AMQP
 	{
 		<%- s['constants'].each do |c| -%>
@@ -41,12 +43,20 @@ package org.ds.amqp
 		public static var <%= "PROTOCOL_MINOR".ljust(24) %>:int = <%= s['minor-version'] %>;
 		public static var <%= "PORT".ljust(24) %>:int = <%= s['port'] %>;
 		
-		private static var classMap	:Dictionary = new Dictionary();
+		private static var classMap		:Dictionary = new Dictionary();
+		private static var methodMap	:Dictionary = new Dictionary();
 		<% s['classes'].each do |c| -%>
-		classMap[<%=c['id']%>]	= <%=c['name'].titleize.gsub(/\s/,'') %>;<% end -%>
-		
-		public static function getClass(id:int):MessageClass {
+		classMap[<%=c['id']%>]		= <%=c['name'].camelize.gsub(/\s/,'') %>;
+		methodMap[<%=c['id']%>] 	= new Dictionary();<% c['methods'].each do |m| -%>
+		methodMap[<%=c['id']%>][<%=m['id']%>]	= <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %>;<% end -%>
+		<% end -%>
+
+		public static function getClass(id:int):Header {
 			return new classMap[id]();
+		}
+		
+		public static function getMethod(cid:int,id:int):Method {
+			return new methodMap[cid][id]();
 		}
 	}
 }
