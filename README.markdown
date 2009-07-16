@@ -2,7 +2,8 @@
 
 ^ amqp-js brings low-latency message queuing to javascript, without using HTTP.
 ^ amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-^ amqp-js 
+^ amqp-js alpha working example http://amqp.peermessaging.com (open in 2 windows)
+
 
 ##AS3 Implementation
 For those familiar with AMQP terminology, the implementation provides classes for every
