@@ -2,7 +2,87 @@
 
 * amqp-js brings low-latency message queuing to javascript, without using HTTP.
 * amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-* amqp-js alpha working example http://amqp.peermessaging.com (open in 2 windows)
+* amqp-js works: http://amqp.peermessaging.com (open in 2 windows)
+
+
+##Javascript
+In order to send and receive messages from an AMQP broker with javascript,
+you need to do the following.
+
+Include "amqp.js" in your src and configure the proxy.  Example:
+
+	var myQueue;
+	var myExchange;
+
+	function messageRecieved(message) {
+		alert(message);
+	};
+
+	function messageRecieved(message) {
+		alert(message.data.message); //hello world!
+	};
+
+	//Initialize the proxy
+	Velveteen.initialize({
+		//host properties
+		//valid properties:
+		//host, user, password, vhost, port
+		connection: {
+			host: "amqp.peermessaging.com"
+		},
+		
+		//where to log? uncomment line below if you have firebug
+		//logger: console,
+		
+		//how verbose do you want the black box swf to
+		//be... 1 is frame decoding messages, 2 is chatty,
+		//and 3 is only critical.  4 is off.
+		logLevel: 2
+	});
+
+	Velveteen.addListener("ready", function() {
+		//Declare a queue and subscribe to it.
+		//The callback is called when messages
+		//are delivered to the queue
+		myQueue = new MessageQueue({
+			callback: messageRecieved
+		});
+
+		//Declare an exchange
+		myExchange = new Exchange({
+			declare: {
+				exchange: "myExchange",
+				type: "topic"
+			}
+		});
+
+		//Bind the exchange to the queue, so messages that are published
+		//on the exchange with the routingKey "keyTest" are delivered to the queue.
+		//Beyond that, the exchangeMessageReceived is called, rather than
+		//messageRecieved
+		myQueue.bind(myExchange, "keyTest", exchangeMessageReceived);
+
+		//Publish a message on the exchange.  This should
+		//go full circle and alert "hello world!"
+		myExchange.publish("keyTest", { message: "hello world!" });
+	});
+
+Load the AMQPFlash.swf object into the dom. Example using swfobject:
+
+	swfobject.embedSWF(
+		"swiffs/AMQPFlash.swf",
+		"amqp_flash",
+		"1",
+		"1",
+		"9",
+		"swiffs/expressInstall.swf",
+		{},
+		{
+			wmode: 'opaque',
+			bgcolor: '#ff0000'
+		},
+		{}
+	);
 
 
 ##AS3 Implementation
@@ -50,71 +130,6 @@ Simple Example:
 		message: "this is a test message payload"
 	});
 
-
-##Javascript - High Level Implementation
-In order to send and receive messages from an AMQP broker with javascript,
-you need to do the following.
-
-Include "amqp.js" in your src.
-Configure the proxy.  Example:
-
-	var myQueue;
-	var myExchange;
-	
-	function messageRecieved(message) {
-		alert(message);
-	};
-	
-	function messageRecieved(message) {
-		alert(message.data.message); //hello world!
-	};
-	
-	Velveteen.initialize({
-		connection: {
-			host: "amqp.peermessaging.com"
-		},
-		logLevel: 2, //info and errors, 1 is frame dumps, 3 is errors only
-		logger: console //firebug logging
-	});
-	
-	Velveteen.addListener("ready", function() {
-		//The callback is called when messages
-		//are delivered to the queue
-		myQueue = new MessageQueue({
-			callback: messageRecieved
-		});
-		
-		//Declare an exchange
-		myExchange = new Exchange({
-			declare: {
-				exchange: "myExchange",
-				type: "topic"
-			}
-		});
-		
-		//Bind the exchange to the queue
-		myQueue.bind(myExchange, "keyTest", exchangeMessageReceived);
-		
-		//Publish a message on the exchange
-		myExchange.publish("keyTest", { message: "hello world!" });
-	});
-
-Load the AMQPFlash.swf object into the dom. Example using swfobject:
-
-	swfobject.embedSWF(
-		"swiffs/AMQPFlash.swf",
-		"amqp_flash",
-		"1",
-		"1",
-		"9",
-		"swiffs/expressInstall.swf",
-		{},
-		{
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
-		},
-		{}
-	);
 
 ##Requirements
 AMQP Server
