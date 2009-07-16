@@ -39,14 +39,16 @@ package org.ds.amqp.transport
 		public		var channel	:int		= 0;
 		public 		var content	:Buffer		= null;
 		public		var valid	:Boolean	= true;
+		public		var payload	:Payload	= null;
 		
-		public function Frame(payload:Payload=null)
+		public function Frame(payLoad:Payload=null)
 		{
-			if(payload != null) {
-				payload.print();
+			if(payLoad != null) {
+				payload = payLoad;
 				type	= payload.frameType;
 				content = payload.serialize();
 			}
+			
 		}
 		
 
@@ -62,6 +64,7 @@ package org.ds.amqp.transport
 			return null;
 		}
 
+		//build a header from buffer
 		public function get header():Header {
 			if(content != null && content.length > 0) {
 				
@@ -74,6 +77,7 @@ package org.ds.amqp.transport
 			return null;
 		}
 		
+		//build a body object from the buffer
 		public function get body():Body {
 			if(content != null && content.length > 0) {
 				var body:Body = new Body();

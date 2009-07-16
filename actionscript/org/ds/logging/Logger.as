@@ -32,9 +32,9 @@ package org.ds.logging
 	{
 		
 		private static var 	_instance	:Logger  = null;
-		private var 		_trace		:Boolean = true;
+		private var			_level		:uint 	 = 3;
 		
-		public function Logger(traceEntries:Boolean=true)
+		public function Logger(logLevel:uint=3)
 		{
 			super();
 			
@@ -42,24 +42,75 @@ package org.ds.logging
 				throw new Error("Thy hath declared an instance already");
 			}
 
-			_trace 		= traceEntries;
+			_level		= logLevel;
 			_instance 	= this;
-			
 		}
 		
-		public static function log(... args):void {
+		public function set level(level:uint):void {
+			_level = level;
+		}
+		public function get level():uint {
+			return _level;
+		}
+		
+		public static function set level(level:uint):void {
 			if(_instance) {
-				_instance.log(args);
+				_instance.level = level;
 			}
 		}
 		
-		public function log(... args):void {
-			if(_trace) {
+		public static function get level():uint {
+			return _instance == null ? 5 : _instance.level;
+		}
+		
+		public static function disable():void {
+			level = 5;
+		}
+		
+		public static function enable():void {
+			if(_instance == null) {
+				new Logger();
+			}
+			level = 3;
+		}
+		
+		public static function get debugging():Boolean {
+			return level == 1;
+		}
+		
+		//critical lvl 3
+		public static function log(... args):void {
+			filter(3, args);
+		}
+		
+		//non-critical lvl 2
+		public static function info(... args):void {
+			filter(2, args);
+		}
+		
+		//non-critical lvl 1
+		public static function debug(... args):void {
+			filter(1, args);
+		}
+		
+		private static function filter(lvl:uint,... args):void {
+			if(_instance) {
+				_instance.filter(lvl, args);
+			}
+		}
+		
+		protected function filter(lvl:uint,... args):void {
+			if(_level <= lvl) {
+				log(args);
+			}
+		}
+		
+		public function log(... args):void {			
+			if(level == 1) {
 				trace(args);
 			}
-			
 			for(var i:int = 0;i < args.length;i++) {
-				dispatchEvent(new LogEvent(LogEvent.ENTRY, args[i]));
+				dispatchEvent(new LogEvent(LogEvent.ENTRY, args));
 			}
 		}
 	}

@@ -26,65 +26,168 @@ THE SOFTWARE.
 
 package {
 	import flash.display.Sprite;
+	import flash.events.Event;
+	import flash.external.ExternalInterface;
 	
 	import org.ds.amqp.connection.Connection;
+	import org.ds.amqp.protocol.Method;
 	import org.ds.fsm.StateEvent;
+	import org.ds.logging.LogEvent;
 	import org.ds.logging.Logger;
 	import org.ds.velveteen.Exchange;
-	import org.ds.velveteen.ExchangeType;
 	import org.ds.velveteen.Queue;
 
 
 	public class AMQPFlash extends Sprite
 	{
-		
-		private var logger		:Logger 	= new Logger(true);
+		private var logger		:Logger 	= new Logger(1);
 		private var connection	:Connection	= null;
+		
+		//coming soon
+		private var queues		:* = {};
+		
+		private var queue		:Queue;
+		private var exchanges	:* = {};
+		
 		
 		public function AMQPFlash()
 		{
-			initExternalInterface();
-			initConnection();
+			initAPI();
 		}
-		
-		
-		//define all API calls for the javascript API
-		private function initExternalInterface():void {
-		}
-		
-		private function initConnection():void {
-			connection = new Connection({
-				host: "192.168.0.2"
-			});
-			connection.addEventListener(Connection.READY, runTests);
-			
-		}
-		
-		protected function runTests(e:StateEvent):void {
-			Logger.log("Running Tests");
 
-						
-			var ex:Exchange = new Exchange(connection, "maki", ExchangeType.TOPIC);
-			var q:Queue 	= new Queue(connection, "tester");
-			
-			
-			q.subscribe(test);
-			
-			q.bind(ex, "block", special);
-			q.bind(ex, "noblock", noBlock, true);
-			
+
+		/**
+		 * External Interface API
+		 */ 
+		private function initAPI():void {
+			ExternalInterface.addCallback("configure", 		api_configure);
+			ExternalInterface.addCallback("connect", 		api_connect);
+			ExternalInterface.addCallback("disconnect", 	api_disconnect);
+			ExternalInterface.addCallback("exchange", 		api_declare_exchange);			
+			ExternalInterface.addCallback("subscribe", 		api_subscribe);
+			ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);			
+			ExternalInterface.addCallback("publish",		api_publish);			
+			ExternalInterface.addCallback("bind", 			api_bind);
+			ExternalInterface.addCallback("unbind", 		api_unbind);			
+			ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
+
+			//by default we enable logging
+			ExternalInterface.call("Velveteen.onApiReady");
+		}
+				
+		/**
+		 * Allows default passing from the javascript implementation
+		 */ 
+		private function api_configure(options:*):void {
+			if(options.logLevel) {
+				logger.addEventListener(LogEvent.ENTRY, onLogEntry);
+				logger.level = options.logLevel;
+			}
+		}
+				
+		private function api_connect(params:*):void {
+			connection = new Connection(params);
+			connection.addEventListener(Connection.READY, 	onConnect);
+			connection.addEventListener(Connection.CLOSED, 	onDisconnect);
 		}
 		
-		protected function test(message:String):void {
-			Logger.log("queue msg", message);
+				
+		private function api_disconnect():void {
+			connection.disconnect();
+		}
+
+
+		private function api_subscribe(opts:*):void {
+			queue = new Queue(connection, opts, onDeliver);
+			queue.addEventListener(Queue.DECLARED, onQueueDeclared);
 		}
 		
-		protected function special(message:String):void {
-			Logger.log("ex message", message);
+		
+		private function api_unsubscribe(queue:String):void {
 		}
 		
-		protected function noBlock(message:String):void {
-			Logger.log("ex message blocked", message);
+				
+		private function api_publish(exchange:String, routingKey:String, payload:*):void {
+			var ex:Exchange = exchanges[exchange];
+			if(ex) {
+				ex.publish(routingKey, payload);
+			} else {
+				Logger.log("Exchange not declared: ", exchange);
+			}
 		}
+		
+		private function api_declare_exchange(opts:*):void {
+			exchanges[opts.exchange] = new Exchange(connection, opts);
+			exchanges[opts.exchange].addEventListener(Exchange.DECLARED, onExchangeDeclared);
+		}
+		
+
+		private function api_bind(queueName:String, exchange:String, routingKey:String):void {
+			
+			
+			var ex:Exchange = exchanges[exchange];
+			if(ex) {
+				queue.bind(ex, routingKey);
+			} else {
+				Logger.log("Exchange not declared: ", exchange);
+			}
+		}
+		
+		private function api_unbind(queue:String, exchange:String, routingKey:String):void {
+		}
+		
+		private function api_set_log_level(lvl:uint):void {
+			Logger.level = lvl;
+		}
+		
+		
+		private function api_send_method(klass:String, opts:*):void {
+		}		
+		
+		
+		/**
+		 * Helpers
+		 */
+		 private function createMethod(klass:Class, opts:*):Method {
+		 	var m:Method = new klass();
+		 	if(opts) {
+				for(var k:* in opts) {
+					m[k] = opts[k];
+				}
+			}
+		 	return m;	 	
+		 }
+		 
+		
+		/**
+		 * Events to send to the client
+		 */		 
+		 private function onConnect(e:Event):void {
+		 	ExternalInterface.call("Velveteen.onConnect");
+		 	ExternalInterface.call("Velveteen.onReady");
+		 }
+
+		 private function onDisconnect(e:Event):void {
+		 	ExternalInterface.call("Velveteen.onDisconnect");
+		 }
+		 		 
+		 private function onLogEntry(e:LogEvent):void {
+		 	ExternalInterface.call("Velveteen.onLogEntry", e.toString());
+		 }
+		 
+		 private function onQueueDeclared(e:StateEvent):void {
+		 	var queue:Queue = e.target as Queue;
+		 	queues[queue.name] = queue;
+		 	ExternalInterface.call("Velveteen.onQueueDeclare", queue.name);
+		 }
+		 
+		private function onExchangeDeclared(e:StateEvent):void {
+		 	var ex:Exchange = e.target as Exchange;
+		 	ExternalInterface.call("Velveteen.onExchangeDeclare", ex.exchangeName);
+		 }
+		 
+		 private function onDeliver(m:*):void {
+		 	ExternalInterface.call("Velveteen.onReceive", m);
+		 }	
 	}
 }

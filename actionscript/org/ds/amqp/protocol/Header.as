@@ -22,14 +22,16 @@ package org.ds.amqp.protocol
 		}
 		
 		public override function serialize():Buffer {
+			
 			var buffer:Buffer = new Buffer();
 			buffer.writeShort(_classId);
 			buffer.writeShort(0); //weight
 			
-			//body size
+			//body size - long
 			buffer.writeUnsignedInt(0);
 			buffer.writeUnsignedInt(bodySize);
 			
+			//property flags
 			buffer.writeFlag();
 			
 			writeProperties(buffer);
@@ -46,7 +48,8 @@ package org.ds.amqp.protocol
 			buffer.readUnsignedInt(); 
 			bodySize = buffer.readUnsignedInt();
 
-			buffer.readFlag(); //property flags ??
+			//property flags
+			buffer.readFlag(); 
 			
 			readProperties(buffer);
 		}

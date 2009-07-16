@@ -25,7 +25,7 @@ package org.ds.amqp.connection
 		}
 		
 		public function openChannels(count:int):void {
-			Logger.log("Opening Channels");
+			Logger.info("Opening Channels");
 			
 			channels.count = count;
 			for(var i:int = 1;i <= count;i++) {
@@ -36,6 +36,11 @@ package org.ds.amqp.connection
 		}
 
 		public function writeFrame(frame:Frame):void {
+			
+			if(frame.payload && Logger.debugging) {
+				frame.payload.print();
+			}
+			
 			writeByte(frame.type);
 			writeShort(channel);
 			writeUnsignedInt(frame.content.length);

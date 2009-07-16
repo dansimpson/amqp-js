@@ -35,7 +35,9 @@ package org.ds.amqp.connection
 	import org.ds.amqp.events.ChannelEvent;
 	import org.ds.amqp.events.MethodEvent;
 	import org.ds.amqp.events.TransmissionEvent;
+	import org.ds.amqp.protocol.Header;
 	import org.ds.amqp.protocol.Method;
+	import org.ds.amqp.protocol.Payload;
 	import org.ds.amqp.protocol.channel.ChannelOpenOk;
 	import org.ds.amqp.protocol.connection.ConnectionClose;
 	import org.ds.amqp.protocol.connection.ConnectionCloseOk;
@@ -117,7 +119,7 @@ package org.ds.amqp.connection
 		}
 
 		protected function negotiating():void {
-			Logger.log("Connected");
+			Logger.info("Connected");
 			stream.writeUTFBytes("AMQP");
 			stream.writeByte(1);
 			stream.writeByte(1);
@@ -130,11 +132,11 @@ package org.ds.amqp.connection
 		}
 
 		protected function disconnected():void {
-			Logger.log("Disconnected");
+			Logger.info("Disconnected");
 		}		
 		
 		protected function ready():void {
-			Logger.log("Ready");
+			Logger.info("Ready");
 		}				
 		
 		public function connect():Boolean {
@@ -144,6 +146,12 @@ package org.ds.amqp.connection
 				return true;
 			}
 			return false;
+		}
+		
+		public function disconnect():void {
+			if(!isClosed) {
+				stream.close();
+			}
 		}
 
 		/*
@@ -192,7 +200,7 @@ package org.ds.amqp.connection
 		//send a method along with it's header and content
 		private function transmit(transmission:Transmission):void {
 			var frames:Array = transmission.frames;
-			frames.forEach(function(frame:Frame):void {
+			frames.forEach(function(frame:Frame,i:int,a:Array):void {
 				stream.writeFrame(frame);
 			});
 			stream.flush();
@@ -224,21 +232,23 @@ package org.ds.amqp.connection
 		
 		protected function onError(e:IOErrorEvent):void {
 			state = CLOSED;
-			Logger.log("Error", e.text);
+			Logger.log("AMQP Error - Disconnecting.  Details: ", e.text);
 		}
 		
-		
-		
+
 		protected function onDataReceived(e:ProgressEvent):void {
 						
 			while (stream.connected && stream.bytesAvailable > 0) {
 
-				var frame:Frame = stream.readFrame();
+				var frame	:Frame = stream.readFrame();
+				var payload	:Payload;
+				
 				switch(frame.type) {
 					case AMQP.FRAME_METHOD:
 						
 						var method:Method = frame.method;
-						method.print();
+						payload = method;
+						
 						if(method.hasContent) {
 							incoming = new Transmission(method);
 						} else {
@@ -246,22 +256,42 @@ package org.ds.amqp.connection
 						}
 						break;
 					case AMQP.FRAME_HEADER:
+					
+						var header:Header = frame.header;
+						payload = header;
+						
 						if(incoming != null) {
-							incoming.header = frame.header;
+							incoming.header = header;
+						} else {
+							Logger.log("Unexpected Header Frame");
 						}
+						
 						break;
 					case AMQP.FRAME_BODY:
+					
+						var body:Body = frame.body;
+						payload = body;
+												
 						if(incoming != null) {
-							incoming.body = frame.body;
+							incoming.body = body;
 							dispatchEvent(new TransmissionEvent(incoming));
+						} else {
+							Logger.log("Unexpected Body Frame");
 						}
+						
 						incoming = null;
+						
 						break;
 					case AMQP.FRAME_HEARTBEAT:
 						break;
 					default:
 						Logger.log("Unhandled Frame Type");
 						break;
+				}
+				
+				//for debugging output
+				if(payload && Logger.debugging) {
+					payload.print();
 				}
 			}
 		}
@@ -291,7 +321,7 @@ package org.ds.amqp.connection
 
 			transmitFrame(new Frame(startOk));
 			
-			Logger.log("Handshaking");
+			Logger.info("Handshaking");
 		}
 		
 		private function onConnectionTune(e:MethodEvent):void {
@@ -306,14 +336,14 @@ package org.ds.amqp.connection
             
             transmitFrame(new Frame(tuneOk));
             
-            Logger.log("Tuning Connection");
+            Logger.info("Tuning Connection");
             
 			var open:ConnectionOpen = new ConnectionOpen();
             open.virtualHost = authSettings.vhost;
             
             transmitFrame(new Frame(open));
 			
-			Logger.log("Establishing Connection");	
+			Logger.info("Establishing Connection");	
 		}
 
         private function onConnectionCloseOk(e:MethodEvent):void {
@@ -322,7 +352,7 @@ package org.ds.amqp.connection
 	
 	    private function onConnectionClose(e:MethodEvent):void {
            var close:ConnectionClose = e.instance as ConnectionClose;
-           Logger.log(close.replyCode, close.replyText);
+           Logger.log("Connection Error!", close.replyCode, close.replyText);
         }	
 
 		private function onChannelOpen(e:MethodEvent):void {

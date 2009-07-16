@@ -28,7 +28,7 @@ package org.ds.amqp.transport
 			return mask > 1;
 		}
 		
-		
+		//write bit (if true) and shift mask
 		public function writeBit(bit:Boolean):void {
 
 			if(mask > 128) {
@@ -41,10 +41,8 @@ package org.ds.amqp.transport
             
             mask <<= 1;
 		}
-		
-		
-		
-		//read a bit from the accumlator and shift right
+
+		//read a bit from the accumlator and shift mask
 		public function readBit():Boolean {
 			
 			if(mask > 128 || mask == 1) {

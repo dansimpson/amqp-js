@@ -68,15 +68,13 @@ package org.ds.amqp.datastructures
 		
 		public function read(b:Buffer):void {
 			
-			var length	:uint		= b.readUnsignedInt();
-            
-            trace(length);
-            
+			var length:uint = b.readUnsignedInt();
+
             if(length == 0) {
             	return;
             }
             
-            var start	:uint		= b.position;
+            var start:uint = b.position;
             
             while(b.position < (start + length)) {
                 
@@ -181,7 +179,7 @@ package org.ds.amqp.datastructures
 		}
 		
 		
-		public function toString():String {
+		/*public function toString():String {
 			return "";
 			//var ba:ByteArray = toByteArray();
 			//return ba.readUTFBytes(ba.length);
@@ -191,7 +189,7 @@ package org.ds.amqp.datastructures
 			var buf:Buffer = new Buffer();
 			write(buf);
 			return buf;
-		}
+		}*/
 		
 
 	}

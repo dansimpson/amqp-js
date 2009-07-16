@@ -27,101 +27,106 @@ THE SOFTWARE.
 package org.ds.velveteen
 {
 	import flash.events.Event;
-	import flash.events.EventDispatcher;
 	
 	import org.ds.amqp.connection.Connection;
 	import org.ds.amqp.events.MethodEvent;
 	import org.ds.amqp.events.TransmissionEvent;
-	import org.ds.amqp.protocol.Payload;
 	import org.ds.amqp.protocol.basic.BasicConsume;
+	import org.ds.amqp.protocol.basic.BasicConsumeOk;
 	import org.ds.amqp.protocol.basic.BasicDeliver;
 	import org.ds.amqp.protocol.queue.QueueBind;
 	import org.ds.amqp.protocol.queue.QueueDeclare;
 	import org.ds.amqp.protocol.queue.QueueDeclareOk;
 	import org.ds.amqp.transport.Frame;
 	import org.ds.amqp.transport.Transmission;
+	import org.ds.fsm.StateMachine;
 	import org.ds.logging.Logger;
 	
-	public class Queue extends EventDispatcher
+	public class Queue extends StateMachine
 	{
-		protected var ready		:Boolean = false;
-		protected var conn		:Connection;
-		protected var name		:String;
-		protected var tag		:String;
-		protected var cb		:Function;
+		public static var DECLARED		:String = "Declared";
+		public static var SUBSCRIBED	:String = "Subscribed";
+		public static var UNSUBSCRIBED	:String = "Unsubscribed";
+		public static var DELETED		:String = "Deleted";
 		
-		protected var bindings	:* = {
-		};
 		
-		protected var buffer	:Array = new Array();
-		
-		public function Queue(connection:Connection, queueName:String, options:*=null)
+		protected var unique		:Number;
+		protected var conn			:Connection;
+		protected var queue			:String;
+		protected var callback		:Function;
+		protected var pending		:Array 			= [];
+		protected var bindings		:* 				= {};
+
+		public function Queue(connection:Connection, options:*=null, cb:Function=null)
 		{
-			conn = connection;
-			name = queueName;
+			super("Null");
 			
-			conn.addEventListener(QueueDeclareOk.EVENT, onQueueDeclareOk);
-			conn.addEventListener(BasicDeliver.EVENT, onReceive);
+			conn = connection;
+			callback = cb;
 			
 			var declare:QueueDeclare = new QueueDeclare();
-			declare.queue 		= name;
-			declare.autoDelete	= true;
-
 			if(options) {
 				for(var k:* in options) {
 					declare[k] = options[k];
 				}
 			}
 			
-			connection.sendFrame(new Frame(declare));
+			conn.addEventListener(QueueDeclareOk.EVENT, onQueueDeclare);
+			conn.sendFrame(new Frame(declare));
 		}
-		
 
-		
-		public function subscribe(callback:Function):void {
-		
-			cb = callback;
-			
-            var consume:BasicConsume = new BasicConsume();
-           	
-            consume.queue = name;
-            consume.consumerTag = name;
-            consume.noAck = true;
-            
-            if(ready) {
-            	conn.sendFrame(new Frame(consume));
-            } else {
-            	buffer.push(consume);
-            }
+
+		public function get isSubscribed():Boolean {
+			return state == SUBSCRIBED;
 		}
 		
 		public function unsubscribe():void {
 		}
 		
-		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null, blockCalls:Boolean=false):Queue {
-			
+		public function destroy():void {
+		}
+		
+		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null):void {
 
-			var bind:QueueBind = new QueueBind();
-			bind.exchange 	= exchange.name;
-			bind.queue 		= name;
-			bind.routingKey = routingKey;
-			
-			bindings[exchange.name + "/" + routingKey] = {
-				exchange	: exchange.name,
-				routingKey	: routingKey,
-				callback	: callback,
-				blockCalls	: blockCalls
+			var config:* = {
+				exchange: exchange,
+				routingKey: routingKey,
+				callback: callback
 			};
 			
-			if(ready) {
-				conn.sendFrame(new Frame(bind));
-			} else {
-				buffer.push(bind);
+			if(!isSubscribed) {
+				pending.push(config);
+				return;
 			}
 			
+			if(!exchange.isDeclared) {
+				pending.push(config);
+				exchange.addEventListener(Exchange.DECLARED, onExchangeDeclare);
+				return;
+			}
 
-			return this;	
+			var bind:QueueBind = new QueueBind();
+			bind.exchange 	= exchange.exchangeName;
+			bind.queue 		= queue;
+			bind.routingKey = routingKey;
+			
+			//create the exchange binding
+			if(!bindings[exchange.exchangeName]) {
+				bindings[exchange.exchangeName] = {
+					routes: {}
+				}
+			}
+			
+			//create the key binding
+			if(!bindings[exchange.exchangeName][routingKey]) {
+				bindings[exchange.exchangeName][routingKey] = {
+					callback: callback
+				}
+			}
+
+			conn.sendFrame(new Frame(bind));
 		}
+		
 		
 		public function unbind(exchange:Exchange, options:*=null):Queue {
 			return this;
@@ -130,33 +135,72 @@ package org.ds.velveteen
 		/*
 		* Event Handlers
 		*/
-		protected function onQueueDeclareOk(e:MethodEvent):void {
-			while(buffer.length > 0) {
-				conn.sendFrame(new Frame((buffer.shift() as Payload)));
-			}
-			ready = true;
+		
+		private function onExchangeDeclare(e:MethodEvent):void {
+			flushBinds();
+		}
+		
+		private function onQueueDeclare(e:MethodEvent):void {
+			
+			state = DECLARED;
+			
+			var declare:QueueDeclareOk = e.instance as QueueDeclareOk;
+			queue = declare.queue;
+			
+			var consume:BasicConsume = new BasicConsume();
+            consume.queue 		= queue;
+            consume.consumerTag = queue;
+            consume.noAck 		= true;
+            
+			conn.sendFrame(new Frame(consume));
+			conn.addEventListener(BasicConsumeOk.EVENT, onSubscribed);
+			conn.removeEventListener(QueueDeclareOk.EVENT, onQueueDeclare);
 		}		
+		
+		
+		
+		private function onSubscribed(e:MethodEvent):void {
+			state = SUBSCRIBED;
+			conn.addEventListener(BasicDeliver.EVENT, onReceive);
+			conn.removeEventListener(BasicConsumeOk.EVENT, onSubscribed);
+			flushBinds();
+		}		
+		
+		
+		private function flushBinds():void {
+			pending.forEach(function(binding:*, i:int, array:Array):void {
+				if(binding.exchange.isDeclared) {
+					bind(binding.exchange, binding.routingKey, binding.callback);
+				}
+			}, this);
+		}
 		
 		protected function onReceive(e:Event):void {
 			
-			Logger.log("Msg Rcvd");
+			Logger.info("Message Received");
 			
 			var t:Transmission 	= (e as TransmissionEvent).instance;
 			var m:BasicDeliver 	= t.method as BasicDeliver;
-			var b:* 			= bindings[m.exchange + "/" + m.routingKey];
+			var b:* 			= bindings[m.exchange][m.routingKey];
 			
-			if(b != null) {				
-				trace("Exchange Msg Rcvd");
-				b.callback(t.body.data);
-				if(b.blockCalls) {
-					return;
-				}
+			var msg:* = {
+				queue		: m.consumerTag,
+				exchange	: m.exchange,
+				routingKey	: m.routingKey,
+				data		: t.body.data
+			};
+
+			if(b != null && b.callback is Function) {			
+				b.callback(msg);
 			}
 			
-			cb(t.body.data);
+			callback(msg);
 		}
 		
 
+		public function get name():String {
+			return queue;
+		}
 
 	}
 }

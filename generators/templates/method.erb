@@ -33,7 +33,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 	import org.ds.amqp.protocol.Method;
 	import org.ds.amqp.transport.Buffer;
 	
-	public class <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %> extends Method
+	public dynamic class <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %> extends Method
 	{
 		public static var EVENT:String = "<%=c['id']%>/<%=m['id']%>";
 		<%- m['arguments'].each do |a| -%>
@@ -57,10 +57,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 		}
 		
 		public override function print():void {
-			trace("--- START <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %> ---");
-			<%- m['arguments'].each do |a| -%>
-			trace("<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %> = ", this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(16) %>);<% end if m['arguments'] %>
-			trace("--- END <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %> ---");
+			printObj("<%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %>", this);
 		}
 	}
 }

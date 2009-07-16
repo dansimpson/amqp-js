@@ -32,15 +32,21 @@ package org.ds.logging
 	{
 		public static var ENTRY:String = "ENTRY";
 		
-		public var message:* = null;
+		private var _messages:*;
 		
-		public function LogEvent(type:String, message:*)
+		public function LogEvent(type:String, ... messages)
 		{
 			//TODO: implement function
 			super(type, bubbles, cancelable);
 			
-			this.message = message;
+			_messages = messages;
 		}
 		
+		public override function toString():String {
+			if(_messages) {
+				return new String().concat(_messages);
+			}
+			return "";
+		}
 	}
 }
