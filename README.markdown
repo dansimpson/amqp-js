@@ -55,9 +55,8 @@ Simple Example:
 In order to send and receive messages from an AMQP broker with javascript,
 you need to do the following.
 
-* Include "amqp.js" in your src.
-* Configure the proxy.  Example:
-
+1. Include "amqp.js" in your src.
+2. Configure the proxy.  Example:
 
 	var myQueue;
 	var myExchange;
@@ -100,9 +99,7 @@ you need to do the following.
 		myExchange.publish("keyTest", { message: "hello world!" });
 	});
 
-
-* Load the AMQPFlash.swf object into the dom. Example using swfobject:
-
+3. Load the AMQPFlash.swf object into the dom. Example using swfobject:
 
 	swfobject.embedSWF(
 		"swiffs/AMQPFlash.swf",
@@ -119,14 +116,13 @@ you need to do the following.
 		{}
 	);
 
-
 ##Requirements
 1. AMQP Server
 
-* RabbitMQ: http://www.rabbitmq.com/
-* ActiveMQ: http://activemq.apache.org/
-* Qpid: http://qpid.apache.org/
-* ZeroMQ: http://www.zeromq.org/
+	RabbitMQ: http://www.rabbitmq.com/
+	ActiveMQ: http://activemq.apache.org/
+	Qpid: http://qpid.apache.org/
+	ZeroMQ: http://www.zeromq.org/
 
 2. Web Server (Not Exactly True)
 3. Basic understanding of message queues.
@@ -142,16 +138,12 @@ Your server will need to dish out flash policy files on port 843.  Check the pol
 directory to get access to an example flash policy file, a python script to host them,
 and an init script to daemonize the flash polciy server.  This is fully working on debian.
 
-Security
-Well... I wouldn't use this for anything that requires security.  No promises.
-Update:  I will figure out a way to implement TLS, without making the filesize
-big. I would like to see it stay under 20KB, but that is optimistic.
-
 ##Todo
 * Finish code to allow for multiple queue subscriptions
 * Package everything nicely
 * Provide better sequence handling
-* TLS Support
+* TLS Support - Security
+* 0.91 Support and eventually 1.0
 * More Examples
 * Shrink file size (29Kb now)
 * Make it easier
