@@ -21,9 +21,9 @@ Simple Example:
 
 ##Higher level examples
 
-	//this declares the queue the broker and subscribes
-	//to it, calling myCallbackFunction when messages
-	//are delivered to the queue
+	//This declares a queue and subscribes
+	//to it.  When messages are delivered to the queue,
+	//the method myCallbackFunction is called.
 	var queue:Queue = new Queue(connection, {
 		queue: "somequeue",
 		exclusive: false
@@ -35,28 +35,27 @@ Simple Example:
 		type: "topic"
 	});
 	
-	//this binds the exchange to the queue, so that when
+	//This binds the exchange to the queue, so that when
 	//messages are published on the exchange with the routing key
-	//matching nasdaq.*, they are also delivered to the queue.
-	//beyond that, we specify another callback override, so that
-	//myOtherCallback is called rather than myCallbackFunction
+	//matching nasdaq.*, they are delivered to the queue.
+	//Beyond that, we specify a callback override, so that
+	//myOtherCallback is called rather than myCallbackFunction for
+	//messages matching the bind conditions
 	queue.bind(exchange, "nasdaq.*", myOtherCallback);
 	
-	//publish a message to the exchange, with the routingKey test
-	//the message payload is a simple object.  If you have custom
-	//objects you need to send, then you must serialize them.
+	//This publishes a message to the exchange, with the routingKey "test".
+	//The message payload is a simple object.
 	exchange.publish("test", { 
 		type: "test",
 		message: "this is a test message payload"
 	});
 
 
-
 ##Javascript - High Level Implementation
-In order to send and receive messages from an AMQP broker with javascript
-You need to do the following.
+In order to send and receive messages from an AMQP broker with javascript,
+you need to do the following.
 
-* Include "amqp.js" in your document.
+* Include "amqp.js" in your src.
 * Configure the proxy.  Example:
 
 
@@ -80,13 +79,13 @@ You need to do the following.
 	});
 	
 	Velveteen.addListener("ready", function() {
-		//the callback is called when messages
+		//The callback is called when messages
 		//are delivered to the queue
 		myQueue = new MessageQueue({
 			callback: messageRecieved
 		});
 		
-		//declare an exchange
+		//Declare an exchange
 		myExchange = new Exchange({
 			declare: {
 				exchange: "myExchange",
@@ -94,14 +93,16 @@ You need to do the following.
 			}
 		});
 		
-		//bind the exchange to the queue
+		//Bind the exchange to the queue
 		myQueue.bind(myExchange, "keyTest", exchangeMessageReceived);
 		
-		//publish a message on the exchange
+		//Publish a message on the exchange
 		myExchange.publish("keyTest", { message: "hello world!" });
 	});
 
+
 * Load the AMQPFlash.swf object into the dom. Example using swfobject:
+
 
 	swfobject.embedSWF(
 		"swiffs/AMQPFlash.swf",
@@ -122,10 +123,10 @@ You need to do the following.
 ##Requirements
 1. AMQP Server
 
-RabbitMQ: http://www.rabbitmq.com/
-ActiveMQ: http://activemq.apache.org/
-Qpid: http://qpid.apache.org/
-ZeroMQ: http://www.zeromq.org/
+* RabbitMQ: http://www.rabbitmq.com/
+* ActiveMQ: http://activemq.apache.org/
+* Qpid: http://qpid.apache.org/
+* ZeroMQ: http://www.zeromq.org/
 
 2. Web Server (Not Exactly True)
 3. Basic understanding of message queues.
