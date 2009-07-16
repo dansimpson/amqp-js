@@ -1,8 +1,8 @@
 #amqp-js
 
-^ amqp-js brings low-latency message queuing to javascript, without using HTTP.
-^ amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-^ amqp-js alpha working example http://amqp.peermessaging.com (open in 2 windows)
+* amqp-js brings low-latency message queuing to javascript, without using HTTP.
+* amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
+* amqp-js alpha working example http://amqp.peermessaging.com (open in 2 windows)
 
 
 ##AS3 Implementation
@@ -56,8 +56,8 @@ Simple Example:
 In order to send and receive messages from an AMQP broker with javascript
 You need to do the following.
 
-^ Include "amqp.js" in your document.
-^ Configure the proxy.  Example:
+* Include "amqp.js" in your document.
+* Configure the proxy.  Example:
 
 
 	var myQueue;
@@ -101,7 +101,7 @@ You need to do the following.
 		myExchange.publish("keyTest", { message: "hello world!" });
 	});
 
-^ Load the AMQPFlash.swf object into the dom. Example using swfobject:
+* Load the AMQPFlash.swf object into the dom. Example using swfobject:
 
 	swfobject.embedSWF(
 		"swiffs/AMQPFlash.swf",
@@ -147,9 +147,10 @@ Update:  I will figure out a way to implement TLS, without making the filesize
 big. I would like to see it stay under 20KB, but that is optimistic.
 
 ##Todo
-^ Finish code to allow for multiple queue subscriptions
-^ Provide better sequence handling
-^ TLS Support
-^ More Examples
-^ Shrink file size (29Kb now)
-^ Make it easier
+* Finish code to allow for multiple queue subscriptions
+* Package everything nicely
+* Provide better sequence handling
+* TLS Support
+* More Examples
+* Shrink file size (29Kb now)
+* Make it easier
