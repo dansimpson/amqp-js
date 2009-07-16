@@ -55,8 +55,8 @@ Simple Example:
 In order to send and receive messages from an AMQP broker with javascript,
 you need to do the following.
 
-- Include "amqp.js" in your src.
-- Configure the proxy.  Example:
+Include "amqp.js" in your src.
+Configure the proxy.  Example:
 
 	var myQueue;
 	var myExchange;
@@ -99,7 +99,7 @@ you need to do the following.
 		myExchange.publish("keyTest", { message: "hello world!" });
 	});
 
-- Load the AMQPFlash.swf object into the dom. Example using swfobject:
+Load the AMQPFlash.swf object into the dom. Example using swfobject:
 
 	swfobject.embedSWF(
 		"swiffs/AMQPFlash.swf",
@@ -117,15 +117,14 @@ you need to do the following.
 	);
 
 ##Requirements
-- AMQP Server
-
+AMQP Server
 	RabbitMQ: http://www.rabbitmq.com/
 	ActiveMQ: http://activemq.apache.org/
 	Qpid: http://qpid.apache.org/
 	ZeroMQ: http://www.zeromq.org/
 
-- Web Server (Not Exactly True)
-- Basic understanding of message queues.
+Web Server (Not Exactly True)
+Basic understanding of message queues.
 
 
 ##Flash Policy
