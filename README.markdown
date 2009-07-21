@@ -9,7 +9,10 @@
 In order to send and receive messages from an AMQP broker with javascript,
 you need to do the following.
 
-Include "swfobject.js" and "amqp.js" in your document.
+Include "swfobject.js" and "amqp.js" in your document:
+
+	<script src="path/to/swfobject.js" type="text/javascript"></script>
+	<script src="path/to/amqp.js" type="text/javascript"></script>
 
 Configure the AMQP client and setup a simple hello world:
 
@@ -34,9 +37,9 @@ Configure the AMQP client and setup a simple hello world:
 		connection: {
 			host: "amqp.peermessaging.com"
 		},
-		logLevel    : 2,
-		swfPath		: "../swfs/AMQPFlash.swf",
-		expressPath	: "../swfs/expressInstall.swf"
+		logLevel	: 2, //slightly chatty.
+		swfPath		: "path/to/AMQPFlash.swf",
+		expressPath	: "path/to/expressInstall.swf"
 	});
 
 
