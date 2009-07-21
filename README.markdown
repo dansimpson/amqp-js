@@ -9,126 +9,63 @@
 In order to send and receive messages from an AMQP broker with javascript,
 you need to do the following.
 
-Include "amqp.js" in your src and configure the proxy.  Example:
+Include "swfobject.js" and "amqp.js" in your document.
+
+Configure the AMQP client and setup a simple hello world:
+
+	
+	function directCallback(m) {
+		alert("Direct Callback");
+	};
+
+	function exchangeCallback(message) {
+		alert(message.data.message); //hello world!
+	};
+
+	function helloWorld() {
+		myExchange.publish("keyTest", { message: "hello world!" });
+	};
 
 	var myQueue;
 	var myExchange;
 
-	function messageRecieved(message) {
-		alert(message);
-	};
-
-	function messageRecieved(message) {
-		alert(message.data.message); //hello world!
-	};
-
 	//Initialize the proxy
-	Velveteen.initialize({
-		//host properties
-		//valid properties:
-		//host, user, password, vhost, port
+	AMQPClient.initialize({
 		connection: {
 			host: "amqp.peermessaging.com"
 		},
-		
-		//where to log? uncomment line below if you have firebug
-		//logger: console,
-		
-		//how verbose do you want the black box swf to
-		//be... 1 is frame decoding messages, 2 is chatty,
-		//and 3 is only critical.  4 is off.
-		logLevel: 2
+		logLevel    : 2,
+		swfPath		: "../swfs/AMQPFlash.swf",
+		expressPath	: "../swfs/expressInstall.swf"
 	});
 
-	Velveteen.addListener("ready", function() {
+
+	AMQPClient.addListener("ready", function() {
+
 		//Declare a queue and subscribe to it.
 		//The callback is called when messages
-		//are delivered to the queue
+		//are delivered to the queue.
 		myQueue = new MessageQueue({
-			callback: messageRecieved
+			callback: directCallback
 		});
 
-		//Declare an exchange
+		//Declare an exchange for publishing messages
+		//and binding
 		myExchange = new Exchange({
 			declare: {
-				exchange: "myExchange",
+				exchange: "ubertopic",
 				type: "topic"
 			}
 		});
 
-		//Bind the exchange to the queue, so messages that are published
-		//on the exchange with the routingKey "keyTest" are delivered to the queue.
-		//Beyond that, the exchangeMessageReceived is called, rather than
-		//messageRecieved
-		myQueue.bind(myExchange, "keyTest", exchangeMessageReceived);
-
-		//Publish a message on the exchange.  This should
-		//go full circle and alert "hello world!"
-		myExchange.publish("keyTest", { message: "hello world!" });
-	});
-
-Load the AMQPFlash.swf object into the dom. Example using swfobject:
-
-	swfobject.embedSWF(
-		"swiffs/AMQPFlash.swf",
-		"amqp_flash",
-		"1",
-		"1",
-		"9",
-		"swiffs/expressInstall.swf",
-		{},
-		{
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
-		},
-		{}
-	);
-
-
-##AS3 Implementation
-For those familiar with AMQP terminology, the implementation provides classes for every
-"AMQP Class", and "AMQP Method".  Each Method Class extends a Method Base Class which provides helper
-methods for creating frames and getting them to the broker.
-
-
-Simple Example:
-
-	var declare:QueueDeclare = new QueueDeclare();
-	declare.queue 		= ""; //have the broker generate it
-	declare.autoDelete 	= true;
-	declare.exclusive 	= false;
-	connection.send(new Frame(declare));
-
-##Higher level examples
-
-	//This declares a queue and subscribes
-	//to it.  When messages are delivered to the queue,
-	//the method myCallbackFunction is called.
-	var queue:Queue = new Queue(connection, {
-		queue: "somequeue",
-		exclusive: false
-	}, myCallbackFunction);
-	
-	//this simply declares a topic exchange called stocks
-	var exchange:Exchange(connection, {
-		exchange: "stocks",
-		type: "topic"
+		//when the queue is declared, bind the exchange to it, so that
+		//messages published to the exchange are delivered to the queue
+		//and the javascript callback is called
+		myQueue.addListener("declared", function(queue) {
+			queue.bind(myExchange, "keyTest", exchangeCallback);
+		}, this);
 	});
 	
-	//This binds the exchange to the queue, so that when
-	//messages are published on the exchange with the routing key
-	//matching nasdaq.*, they are delivered to the queue.
-	//Beyond that, we specify a callback override, so that
-	//myOtherCallback is called rather than myCallbackFunction for
-	//messages matching the bind conditions
-	queue.bind(exchange, "nasdaq.*", myOtherCallback);
-	
-	//This publishes a message to the exchange, with the routingKey "test".
-	//The message payload is a simple object.
-	exchange.publish("test", { 
-		type: "test",
-		message: "this is a test message payload"
-	});
 
 
 ##Requirements

@@ -61,36 +61,23 @@ Ext.Application = Ext.extend(Ext.Viewport, {
 //rendered and ready to go
 Ext.onReady(function() {
 
-	Velveteen.initialize({
+	Application = new Ext.Application();
+	
+	AMQPClient.initialize({
 		connection: {
 			host: "amqp.peermessaging.com"
 		},
-		logLevel: 1
+		logLevel: 2,
+		//logger: console,
+		swfPath		: "../swfs/AMQPFlash.swf",
+		expressPath	: "../swfs/expressInstall.swf"
 	});
 	
-	swfobject.embedSWF(
-		"swiffs/AMQPFlash.swf",
-		"amqp_flash",
-		"1",
-		"1",
-		"9",
-		"swiffs/expressInstall.swf",
-		{},
-		{
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
-		},
-		{}
-	);
-
-	Ext.QuickTips.init();
-
-	Application = new Ext.Application();
-
-	Velveteen.addListener("ready", function() {
+	AMQPClient.addListener("ready", function() {
 		MQ = new MessageQueue({
-			callback: Application.messageReceived
+			callback: null
 		});
+	
 		DemoExchange = new Exchange({
 			declare: {
 				exchange: "demo",
@@ -99,9 +86,9 @@ Ext.onReady(function() {
 		});
 	});
 	
+	
 	Ext.get("loading").remove();
 	Ext.get("loading-mask").fadeOut();
-
 });
 
 

@@ -8,7 +8,7 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 
 	initComponent: function() {
 	
-		Velveteen.logger = this;
+		AMQPClient.logger = this;
 		
 		this.store = new Ext.data.ArrayStore({
 			fields: [
@@ -39,7 +39,7 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 					xtype: "numberfield",
 					minValue: 1,
 					maxValue: 3,
-					value: Velveteen.logLevel,
+					value: AMQPClient.logLevel,
 					id: "level",
 					width: 20,
 					enableKeyEvents: true,
@@ -89,7 +89,7 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 	
 	update: function(){
 		if(this.getBottomToolbar().get("level").isValid()) {
-			Velveteen.setLogLevel(this.getLevel());
+			AMQPClient.setLogLevel(this.getLevel());
 		}
 	},
 	

@@ -60,8 +60,8 @@ Ext.ux.InteractiveGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			autoExpandColumn: 'company'
 		});
 		
-		//wire up the velveteen
-		Velveteen.addListener("exchangeDeclared", this.bindExchange, this);
+		//wire up the AMQPClient
+		AMQPClient.addListener("exchangeDeclared", this.bindExchange, this);
 		
 		this.on('rowclick', this.updatePrice, this);
 	

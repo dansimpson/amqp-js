@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+	<title>AMQP JS - Advanced Message Queue Protocol Javascript Client Implementaiton - Stocks</title>
+	<script src="../javascripts/amqp.js" type="text/javascript"></script>
+	<script src="../javascripts/swfobject.js" type="text/javascript"></script>
+	
+	<script type="text/javascript">
+		function myCallback(m) {
+			alert("myCallback");
+		}
+	
+		function cbOne(m) {
+			alert("cbOne: " + m.exchange + " - " + m.routingKey);
+		}
+		
+		function cbTwo(m) {
+			alert("cbTwo: " + m.exchange + " - " + m.routingKey);
+		}
+		
+		function publishTest(key) {
+			myExchange.publish(key, {foo:"foo", bar:"bar"});
+		}
+		
+		var SimpleLogger = {
+			log: function(m) {
+				var d = document.getElementById('logger');
+				d.innerHTML = d.innerHTML + m + "<br/>";
+			}
+		};
+	</script>
+	
+	<script type="text/javascript">
+	
+		var myQueue;
+		var myExchange;
+	
+		AMQPClient.initialize({
+			connection: {
+				host: "amqp.peermessaging.com"
+			},
+			logLevel: 2,
+			logger	: SimpleLogger,
+			swfPath		: "../swfs/AMQPFlash.swf",
+			expressPath	: "../swfs/expressInstall.swf"
+		});
+	
+		AMQPClient.addListener("ready", function() {
+	
+			myQueue = new MessageQueue({
+				callback: myCallback
+			});
+
+			
+			myExchange = new Exchange({
+				declare: {
+					exchange: "ubertopic",
+					type: "topic"
+				}
+			});
+			
+			myQueue.addListener("declared", function(queue) {
+				queue.bind(myExchange, "alert1", cbOne);
+				queue.bind(myExchange, "alert2", cbTwo);
+			}, this);
+				
+		});
+	</script>
+
+</head>
+<body>
+
+<div id="amqp-wrap" style="position:absolute;z-index:10000;left:10;top: 10;">
+	<div id="AMQPProxy">Loading AMQP Proxy</div>
+</div>
+
+<a href="#" onClick="publishTest('alert1');">Publish Message (alert1)</a><br/>
+<a href="#" onClick="publishTest('alert2');">Publish Message (alert2)</a><br/>
+
+<div id="logger">
+</div>
+
+</body>
+
+</html>

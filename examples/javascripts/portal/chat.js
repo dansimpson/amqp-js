@@ -54,8 +54,8 @@ Ext.ux.ChatPanel = Ext.extend(Ext.grid.GridPanel, {
 			}
 		});
 		
-		//wire up the velveteen
-		Velveteen.addListener("exchangeDeclared", this.bindExchange, this);
+		//wire up the AMQPClient
+		AMQPClient.addListener("exchangeDeclared", this.bindExchange, this);
 
 		Ext.ux.ChatPanel.superclass.initComponent.apply(this, arguments);
 	},
