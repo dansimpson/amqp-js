@@ -2,8 +2,8 @@
 
 * amqp-js brings low-latency message queuing to javascript, without using HTTP.
 * amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-* amqp-js works: http://amqp.peermessaging.com (open in 2 windows)
-
+* Example: http://amqp.peermessaging.com (open in 2 windows)
+* Google Group: http://groups.google.com/group/amqp-js or amqp-js@googlegroups.com
 
 ##Javascript
 In order to send and receive messages from an AMQP broker with javascript,
@@ -93,11 +93,11 @@ directory to get access to an example flash policy file, a python script to host
 and an init script to daemonize the flash polciy server.  This is fully working on debian.
 
 ##Todo
-* Finish code to allow for multiple queue subscriptions
-* Package everything nicely
+* Provide an adaptor interface for alternative transports
 * Provide better sequence handling
 * TLS Support - Security
 * 0.91 Support and eventually 1.0
 * More Examples
 * Shrink file size (29Kb now)
 * Make it easier
+* Transactions
