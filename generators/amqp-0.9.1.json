@@ -1,0 +1,2716 @@
+{
+  "amqp": {
+    "class": [
+      {
+        "name": "connection",
+        "doc": [
+          "\n      The connection class provides methods for a client to establish a network connection to\n      a server, and for both peers to operate the connection thereafter.\n    ",
+          "\n      connection          = open-connection *use-connection close-connection\n      open-connection     = C:protocol-header\n                            S:START C:START-OK\n                            *challenge\n                            S:TUNE C:TUNE-OK\n                            C:OPEN S:OPEN-OK\n      challenge           = S:SECURE C:SECURE-OK\n      use-connection      = *channel\n      close-connection    = C:CLOSE S:CLOSE-OK\n                          \/ S:CLOSE C:CLOSE-OK\n    "
+        ],
+        "handler": "connection",
+        "method": [
+          {
+            "name": "start",
+            "response": {
+              "name": "start-ok"
+            },
+            "doc": "\n        This method starts the connection negotiation process by telling the client the\n        protocol version that the server proposes, along with a list of security mechanisms\n        which the client can use for authentication.\n      ",
+            "field": [
+              {
+                "name": "version-major",
+                "doc": "\n          The major version number can take any value from 0 to 99 as defined in the\n          AMQP specification.\n        ",
+                "domain": "octet",
+                "label": "protocol major version"
+              },
+              {
+                "name": "version-minor",
+                "doc": "\n          The minor version number can take any value from 0 to 99 as defined in the\n          AMQP specification.\n        ",
+                "domain": "octet",
+                "label": "protocol minor version"
+              },
+              {
+                "name": "server-properties",
+                "domain": "peer-properties",
+                "label": "server properties",
+                "rule": {
+                  "name": "required-fields",
+                  "doc": [
+                    "\n            The properties SHOULD contain at least these fields: \"host\", specifying the\n            server host name or address, \"product\", giving the name of the server product,\n            \"version\", giving the name of the server version, \"platform\", giving the name\n            of the operating system, \"copyright\", if appropriate, and \"information\", giving\n            other general information.\n          ",
+                    "\n            Client connects to server and inspects the server properties. It checks for\n            the presence of the required fields.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "mechanisms",
+                "doc": "\n          A list of the security mechanisms that the server supports, delimited by spaces.\n        ",
+                "domain": "longstr",
+                "assert": {
+                  "check": "notnull"
+                },
+                "label": "available security mechanisms"
+              },
+              {
+                "name": "locales",
+                "doc": "\n          A list of the message locales that the server supports, delimited by spaces. The\n          locale defines the language in which the server will send reply texts.\n        ",
+                "domain": "longstr",
+                "assert": {
+                  "check": "notnull"
+                },
+                "label": "available message locales",
+                "rule": {
+                  "name": "required-support",
+                  "doc": [
+                    "\n            The server MUST support at least the en_US locale.\n          ",
+                    "\n            Client connects to server and inspects the locales field. It checks for\n            the presence of the required locale(s).\n          "
+                  ]
+                }
+              }
+            ],
+            "index": "10",
+            "synchronous": "1",
+            "label": "start connection negotiation",
+            "rule": [
+              {
+                "name": "protocol-name",
+                "doc": [
+                  "\n          If the server cannot support the protocol specified in the protocol header,\n          it MUST respond with a valid protocol header and then close the socket\n          connection.\n        ",
+                  "\n          The client sends a protocol header containing an invalid protocol name.\n          The server MUST respond by sending a valid protocol header and then closing\n          the connection.\n        "
+                ]
+              },
+              {
+                "name": "server-support",
+                "doc": [
+                  "\n          The server MUST provide a protocol version that is lower than or equal to\n          that requested by the client in the protocol header.\n        ",
+                  "\n          The client requests a protocol version that is higher than any valid\n          implementation, e.g. 2.0.  The server must respond with a protocol header\n          indicating its supported protocol version, e.g. 1.0.\n        "
+                ]
+              },
+              {
+                "name": "client-support",
+                "doc": [
+                  "\n          If the client cannot handle the protocol version suggested by the server\n          it MUST close the socket connection without sending any further data.\n        ",
+                  "\n          The server sends a protocol version that is lower than any valid\n          implementation, e.g. 0.1.  The client must respond by closing the\n          connection without sending any further data.\n        "
+                ]
+              }
+            ],
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "start-ok",
+            "doc": "\n        This method selects a SASL security mechanism.\n      ",
+            "field": [
+              {
+                "name": "client-properties",
+                "domain": "peer-properties",
+                "label": "client properties",
+                "rule": {
+                  "name": "required-fields",
+                  "doc": "\n            The properties SHOULD contain at least these fields: \"product\", giving the name\n            of the client product, \"version\", giving the name of the client version, \"platform\",\n            giving the name of the operating system, \"copyright\", if appropriate, and\n            \"information\", giving other general information.\n          "
+                }
+              },
+              {
+                "name": "mechanism",
+                "doc": "\n          A single security mechanisms selected by the client, which must be one of those\n          specified by the server.\n        ",
+                "domain": "shortstr",
+                "assert": {
+                  "check": "notnull"
+                },
+                "label": "selected security mechanism",
+                "rule": [
+                  {
+                    "name": "security",
+                    "doc": "\n            The client SHOULD authenticate using the highest-level security profile it\n            can handle from the list provided by the server.\n          "
+                  },
+                  {
+                    "name": "validity",
+                    "doc": [
+                      "\n            If the mechanism field does not contain one of the security mechanisms\n            proposed by the server in the Start method, the server MUST close the\n            connection without sending any further data.\n          ",
+                      "\n            Client connects to server and sends an invalid security mechanism. The\n            server must respond by closing the connection (a socket close, with no\n            connection close negotiation).\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "response",
+                "doc": "\n          A block of opaque data passed to the security mechanism. The contents of this\n          data are defined by the SASL security mechanism.\n        ",
+                "domain": "longstr",
+                "assert": {
+                  "check": "notnull"
+                },
+                "label": "security response data"
+              },
+              {
+                "name": "locale",
+                "doc": "\n          A single message locale selected by the client, which must be one of those\n          specified by the server.\n        ",
+                "domain": "shortstr",
+                "assert": {
+                  "check": "notnull"
+                },
+                "label": "selected message locale"
+              }
+            ],
+            "index": "11",
+            "synchronous": "1",
+            "label": "select security mechanism and locale",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "secure",
+            "response": {
+              "name": "secure-ok"
+            },
+            "doc": "\n        The SASL protocol works by exchanging challenges and responses until both peers have\n        received sufficient information to authenticate each other. This method challenges\n        the client to provide more information.\n      ",
+            "field": {
+              "name": "challenge",
+              "doc": "\n          Challenge information, a block of opaque binary data passed to the security\n          mechanism.\n        ",
+              "domain": "longstr",
+              "label": "security challenge data"
+            },
+            "index": "20",
+            "synchronous": "1",
+            "label": "security mechanism challenge",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "secure-ok",
+            "doc": "\n        This method attempts to authenticate, passing a block of SASL data for the security\n        mechanism at the server side.\n      ",
+            "field": {
+              "name": "response",
+              "doc": "\n          A block of opaque data passed to the security mechanism. The contents of this\n          data are defined by the SASL security mechanism.\n        ",
+              "domain": "longstr",
+              "assert": {
+                "check": "notnull"
+              },
+              "label": "security response data"
+            },
+            "index": "21",
+            "synchronous": "1",
+            "label": "security mechanism response",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "tune",
+            "response": {
+              "name": "tune-ok"
+            },
+            "doc": "\n        This method proposes a set of connection configuration values to the client. The\n        client can accept and\/or adjust these.\n      ",
+            "field": [
+              {
+                "name": "channel-max",
+                "doc": "\n          Specifies highest channel number that the server permits.  Usable channel numbers\n          are in the range 1..channel-max.  Zero indicates no specified limit.\n        ",
+                "domain": "short",
+                "label": "proposed maximum channels"
+              },
+              {
+                "name": "frame-max",
+                "doc": "\n          The largest frame size that the server proposes for the connection, including\n          frame header and end-byte.  The client can negotiate a lower value. Zero means\n          that the server does not impose any specific limit but may reject very large\n          frames if it cannot allocate resources for them.\n        ",
+                "domain": "long",
+                "label": "proposed maximum frame size",
+                "rule": {
+                  "name": "minimum",
+                  "doc": [
+                    "\n            Until the frame-max has been negotiated, both peers MUST accept frames of up\n            to frame-min-size octets large, and the minimum negotiated value for frame-max\n            is also frame-min-size.\n          ",
+                    "\n            Client connects to server and sends a large properties field, creating a frame\n            of frame-min-size octets.  The server must accept this frame.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "heartbeat",
+                "doc": "\n          The delay, in seconds, of the connection heartbeat that the server wants.\n          Zero means the server does not want a heartbeat.\n        ",
+                "domain": "short",
+                "label": "desired heartbeat delay"
+              }
+            ],
+            "index": "30",
+            "synchronous": "1",
+            "label": "propose connection tuning parameters",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "tune-ok",
+            "doc": "\n        This method sends the client's connection tuning parameters to the server.\n        Certain fields are negotiated, others provide capability information.\n      ",
+            "field": [
+              {
+                "name": "channel-max",
+                "doc": "\n          The maximum total number of channels that the client will use per connection.\n        ",
+                "domain": "short",
+                "assert": [
+                  {
+                    "check": "notnull"
+                  },
+                  {
+                    "field": "channel-max",
+                    "method": "tune",
+                    "check": "le"
+                  }
+                ],
+                "label": "negotiated maximum channels",
+                "rule": {
+                  "name": "upper-limit",
+                  "doc": "\n            If the client specifies a channel max that is higher than the value provided\n            by the server, the server MUST close the connection without attempting a\n            negotiated close.  The server may report the error in some fashion to assist\n            implementors.\n          "
+                }
+              },
+              {
+                "name": "frame-max",
+                "doc": "\n          The largest frame size that the client and server will use for the connection.\n          Zero means that the client does not impose any specific limit but may reject\n          very large frames if it cannot allocate resources for them. Note that the\n          frame-max limit applies principally to content frames, where large contents can\n          be broken into frames of arbitrary size.\n        ",
+                "domain": "long",
+                "label": "negotiated maximum frame size",
+                "rule": [
+                  {
+                    "name": "minimum",
+                    "doc": "\n            Until the frame-max has been negotiated, both peers MUST accept frames of up\n            to frame-min-size octets large, and the minimum negotiated value for frame-max\n            is also frame-min-size.\n          "
+                  },
+                  {
+                    "name": "upper-limit",
+                    "doc": "\n            If the client specifies a frame max that is higher than the value provided\n            by the server, the server MUST close the connection without attempting a\n            negotiated close. The server may report the error in some fashion to assist\n            implementors.\n          "
+                  }
+                ]
+              },
+              {
+                "name": "heartbeat",
+                "doc": "\n          The delay, in seconds, of the connection heartbeat that the client wants. Zero\n          means the client does not want a heartbeat.\n        ",
+                "domain": "short",
+                "label": "desired heartbeat delay"
+              }
+            ],
+            "index": "31",
+            "synchronous": "1",
+            "label": "negotiate connection tuning parameters",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "open",
+            "response": {
+              "name": "open-ok"
+            },
+            "doc": "\n        This method opens a connection to a virtual host, which is a collection of\n        resources, and acts to separate multiple application domains within a server.\n        The server may apply arbitrary limits per virtual host, such as the number\n        of each type of entity that may be used, per connection and\/or in total.\n      ",
+            "field": [
+              {
+                "name": "virtual-host",
+                "doc": "\n          The name of the virtual host to work with.\n        ",
+                "domain": "path",
+                "label": "virtual host name",
+                "rule": [
+                  {
+                    "name": "separation",
+                    "doc": "\n            If the server supports multiple virtual hosts, it MUST enforce a full\n            separation of exchanges, queues, and all associated entities per virtual\n            host. An application, connected to a specific virtual host, MUST NOT be able\n            to access resources of another virtual host.\n          "
+                  },
+                  {
+                    "name": "security",
+                    "doc": "\n            The server SHOULD verify that the client has permission to access the\n            specified virtual host.\n          "
+                  }
+                ]
+              },
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "shortstr"
+              },
+              {
+                "name": "reserved-2",
+                "reserved": "1",
+                "type": "bit"
+              }
+            ],
+            "index": "40",
+            "synchronous": "1",
+            "label": "open connection to virtual host",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "open-ok",
+            "doc": "\n        This method signals to the client that the connection is ready for use.\n      ",
+            "field": {
+              "name": "reserved-1",
+              "reserved": "1",
+              "type": "shortstr"
+            },
+            "index": "41",
+            "synchronous": "1",
+            "label": "signal that connection is ready",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "close",
+            "response": {
+              "name": "close-ok"
+            },
+            "doc": "\n        This method indicates that the sender wants to close the connection. This may be\n        due to internal conditions (e.g. a forced shut-down) or due to an error handling\n        a specific method, i.e. an exception. When a close is due to an exception, the\n        sender provides the class and method id of the method which caused the exception.\n      ",
+            "field": [
+              {
+                "name": "reply-code",
+                "domain": "reply-code"
+              },
+              {
+                "name": "reply-text",
+                "domain": "reply-text"
+              },
+              {
+                "name": "class-id",
+                "doc": "\n          When the close is provoked by a method exception, this is the class of the\n          method.\n        ",
+                "domain": "class-id",
+                "label": "failing method class"
+              },
+              {
+                "name": "method-id",
+                "doc": "\n          When the close is provoked by a method exception, this is the ID of the method.\n        ",
+                "domain": "method-id",
+                "label": "failing method ID"
+              }
+            ],
+            "index": "50",
+            "synchronous": "1",
+            "label": "request a connection close",
+            "rule": {
+              "name": "stability",
+              "doc": "\n          After sending this method, any received methods except Close and Close-OK MUST\n          be discarded.  The response to receiving a Close after sending Close must be to\n          send Close-Ok.\n        "
+            },
+            "chassis": [
+              {
+                "name": "client",
+                "implement": "MUST"
+              },
+              {
+                "name": "server",
+                "implement": "MUST"
+              }
+            ]
+          },
+          {
+            "name": "close-ok",
+            "doc": "\n        This method confirms a Connection.Close method and tells the recipient that it is\n        safe to release resources for the connection and close the socket.\n      ",
+            "index": "51",
+            "synchronous": "1",
+            "label": "confirm a connection close",
+            "rule": {
+              "name": "reporting",
+              "doc": "\n          A peer that detects a socket closure without having received a Close-Ok\n          handshake method SHOULD log the error.\n        "
+            },
+            "chassis": [
+              {
+                "name": "client",
+                "implement": "MUST"
+              },
+              {
+                "name": "server",
+                "implement": "MUST"
+              }
+            ]
+          }
+        ],
+        "index": "10",
+        "label": "work with socket connections",
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "MUST"
+          },
+          {
+            "name": "client",
+            "implement": "MUST"
+          }
+        ]
+      },
+      {
+        "name": "channel",
+        "doc": [
+          "\n      The channel class provides methods for a client to establish a channel to a\n      server and for both peers to operate the channel thereafter.\n    ",
+          "\n      channel             = open-channel *use-channel close-channel\n      open-channel        = C:OPEN S:OPEN-OK\n      use-channel         = C:FLOW S:FLOW-OK\n                          \/ S:FLOW C:FLOW-OK\n                          \/ functional-class\n      close-channel       = C:CLOSE S:CLOSE-OK\n                          \/ S:CLOSE C:CLOSE-OK\n    "
+        ],
+        "handler": "channel",
+        "method": [
+          {
+            "name": "open",
+            "response": {
+              "name": "open-ok"
+            },
+            "doc": "\n        This method opens a channel to the server.\n      ",
+            "field": {
+              "name": "reserved-1",
+              "reserved": "1",
+              "type": "shortstr"
+            },
+            "index": "10",
+            "synchronous": "1",
+            "label": "open a channel for use",
+            "rule": {
+              "name": "state",
+              "doc": [
+                "\n          The client MUST NOT use this method on an already-opened channel.\n        ",
+                "\n          Client opens a channel and then reopens the same channel.\n        "
+              ],
+              "on_failure": "channel-error"
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "open-ok",
+            "doc": "\n        This method signals to the client that the channel is ready for use.\n      ",
+            "field": {
+              "name": "reserved-1",
+              "reserved": "1",
+              "type": "longstr"
+            },
+            "index": "11",
+            "synchronous": "1",
+            "label": "signal that the channel is ready",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "flow",
+            "response": {
+              "name": "flow-ok"
+            },
+            "doc": "\n        This method asks the peer to pause or restart the flow of content data sent by\n        a consumer. This is a simple flow-control mechanism that a peer can use to avoid\n        overflowing its queues or otherwise finding itself receiving more messages than\n        it can process. Note that this method is not intended for window control. It does\n        not affect contents returned by Basic.Get-Ok methods.\n      ",
+            "field": {
+              "name": "active",
+              "doc": "\n          If 1, the peer starts sending content frames. If 0, the peer stops sending\n          content frames.\n        ",
+              "domain": "bit",
+              "label": "start\/stop content frames"
+            },
+            "index": "20",
+            "synchronous": "1",
+            "label": "enable\/disable flow from peer",
+            "rule": [
+              {
+                "name": "initial-state",
+                "doc": "\n          When a new channel is opened, it is active (flow is active). Some applications\n          assume that channels are inactive until started. To emulate this behaviour a\n          client MAY open the channel, then pause it.\n        "
+              },
+              {
+                "name": "bidirectional",
+                "doc": "\n          When sending content frames, a peer SHOULD monitor the channel for incoming\n          methods and respond to a Channel.Flow as rapidly as possible.\n        "
+              },
+              {
+                "name": "throttling",
+                "doc": "\n          A peer MAY use the Channel.Flow method to throttle incoming content data for\n          internal reasons, for example, when exchanging data over a slower connection.\n        "
+              },
+              {
+                "name": "expected-behaviour",
+                "doc": "\n          The peer that requests a Channel.Flow method MAY disconnect and\/or ban a peer\n          that does not respect the request.  This is to prevent badly-behaved clients\n          from overwhelming a server.\n        "
+              }
+            ],
+            "chassis": [
+              {
+                "name": "server",
+                "implement": "MUST"
+              },
+              {
+                "name": "client",
+                "implement": "MUST"
+              }
+            ]
+          },
+          {
+            "name": "flow-ok",
+            "doc": "\n        Confirms to the peer that a flow command was received and processed.\n      ",
+            "field": {
+              "name": "active",
+              "doc": "\n          Confirms the setting of the processed flow method: 1 means the peer will start\n          sending or continue to send content frames; 0 means it will not.\n        ",
+              "domain": "bit",
+              "label": "current flow setting"
+            },
+            "index": "21",
+            "label": "confirm a flow method",
+            "chassis": [
+              {
+                "name": "server",
+                "implement": "MUST"
+              },
+              {
+                "name": "client",
+                "implement": "MUST"
+              }
+            ]
+          },
+          {
+            "name": "close",
+            "response": {
+              "name": "close-ok"
+            },
+            "doc": "\n        This method indicates that the sender wants to close the channel. This may be due to\n        internal conditions (e.g. a forced shut-down) or due to an error handling a specific\n        method, i.e. an exception. When a close is due to an exception, the sender provides\n        the class and method id of the method which caused the exception.\n      ",
+            "field": [
+              {
+                "name": "reply-code",
+                "domain": "reply-code"
+              },
+              {
+                "name": "reply-text",
+                "domain": "reply-text"
+              },
+              {
+                "name": "class-id",
+                "doc": "\n          When the close is provoked by a method exception, this is the class of the\n          method.\n        ",
+                "domain": "class-id",
+                "label": "failing method class"
+              },
+              {
+                "name": "method-id",
+                "doc": "\n          When the close is provoked by a method exception, this is the ID of the method.\n        ",
+                "domain": "method-id",
+                "label": "failing method ID"
+              }
+            ],
+            "index": "40",
+            "synchronous": "1",
+            "label": "request a channel close",
+            "rule": {
+              "name": "stability",
+              "doc": "\n          After sending this method, any received methods except Close and Close-OK MUST\n          be discarded.  The response to receiving a Close after sending Close must be to\n          send Close-Ok.\n        "
+            },
+            "chassis": [
+              {
+                "name": "client",
+                "implement": "MUST"
+              },
+              {
+                "name": "server",
+                "implement": "MUST"
+              }
+            ]
+          },
+          {
+            "name": "close-ok",
+            "doc": "\n        This method confirms a Channel.Close method and tells the recipient that it is safe\n        to release resources for the channel.\n      ",
+            "index": "41",
+            "synchronous": "1",
+            "label": "confirm a channel close",
+            "rule": {
+              "name": "reporting",
+              "doc": "\n          A peer that detects a socket closure without having received a Channel.Close-Ok\n          handshake method SHOULD log the error.\n        "
+            },
+            "chassis": [
+              {
+                "name": "client",
+                "implement": "MUST"
+              },
+              {
+                "name": "server",
+                "implement": "MUST"
+              }
+            ]
+          }
+        ],
+        "index": "20",
+        "label": "work with channels",
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "MUST"
+          },
+          {
+            "name": "client",
+            "implement": "MUST"
+          }
+        ]
+      },
+      {
+        "name": "exchange",
+        "doc": [
+          "\n      Exchanges match and distribute messages across queues. Exchanges can be configured in\n      the server or declared at runtime.\n    ",
+          "\n      exchange            = C:DECLARE  S:DECLARE-OK\n                          \/ C:DELETE   S:DELETE-OK\n    "
+        ],
+        "handler": "channel",
+        "method": [
+          {
+            "name": "declare",
+            "response": {
+              "name": "declare-ok"
+            },
+            "doc": "\n        This method creates an exchange if it does not already exist, and if the exchange\n        exists, verifies that it is of the correct and expected class.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "exchange",
+                "domain": "exchange-name",
+                "assert": {
+                  "check": "notnull"
+                },
+                "rule": [
+                  {
+                    "name": "reserved",
+                    "doc": [
+                      "\n            Exchange names starting with \"amq.\" are reserved for pre-declared and\n            standardised exchanges. The client MAY declare an exchange starting with\n            \"amq.\" if the passive option is set, or the exchange already exists.\n          ",
+                      "\n            The client attempts to declare a non-existing exchange starting with\n            \"amq.\" and with the passive option set to zero.\n          "
+                    ],
+                    "on_failure": "access-refused"
+                  },
+                  {
+                    "name": "syntax",
+                    "doc": [
+                      "\n            The exchange name consists of a non-empty sequence of these characters:\n            letters, digits, hyphen, underscore, period, or colon.\n          ",
+                      "\n            The client attempts to declare an exchange with an illegal name.\n          "
+                    ],
+                    "on_failure": "precondition-failed"
+                  }
+                ]
+              },
+              {
+                "name": "type",
+                "doc": "\n          Each exchange belongs to one of a set of exchange types implemented by the\n          server. The exchange types define the functionality of the exchange - i.e. how\n          messages are routed through it. It is not valid or meaningful to attempt to\n          change the type of an existing exchange.\n        ",
+                "domain": "shortstr",
+                "label": "exchange type",
+                "rule": [
+                  {
+                    "name": "typed",
+                    "doc": [
+                      "\n            Exchanges cannot be redeclared with different types.  The client MUST not\n            attempt to redeclare an existing exchange with a different type than used\n            in the original Exchange.Declare method.\n          ",
+                      "\n            TODO.\n          "
+                    ],
+                    "on_failure": "not-allowed"
+                  },
+                  {
+                    "name": "support",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to declare an exchange with a type that the\n            server does not support.\n          ",
+                      "\n            TODO.\n          "
+                    ],
+                    "on_failure": "command-invalid"
+                  }
+                ]
+              },
+              {
+                "name": "passive",
+                "doc": "\n          If set, the server will reply with Declare-Ok if the exchange already\n          exists with the same name, and raise an error if not.  The client can\n          use this to check whether an exchange exists without modifying the\n          server state. When set, all other method fields except name and no-wait\n          are ignored.  A declare with both passive and no-wait has no effect.\n          Arguments are compared for semantic equivalence.\n        ",
+                "domain": "bit",
+                "label": "do not create exchange",
+                "rule": [
+                  {
+                    "name": "not-found",
+                    "doc": [
+                      "\n            If set, and the exchange does not already exist, the server MUST\n            raise a channel exception with reply code 404 (not found).\n          ",
+                      "\n            TODO.\n          "
+                    ]
+                  },
+                  {
+                    "name": "equivalent",
+                    "doc": [
+                      "\n            If not set and the exchange exists, the server MUST check that the\n            existing exchange has the same values for type, durable, and arguments\n            fields.  The server MUST respond with Declare-Ok if the requested\n            exchange matches these fields, and MUST raise a channel exception if\n            not.\n          ",
+                      "\n            TODO.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "durable",
+                "doc": "\n          If set when creating a new exchange, the exchange will be marked as durable.\n          Durable exchanges remain active when a server restarts. Non-durable exchanges\n          (transient exchanges) are purged if\/when a server restarts.\n        ",
+                "domain": "bit",
+                "label": "request a durable exchange",
+                "rule": {
+                  "name": "support",
+                  "doc": [
+                    "\n            The server MUST support both durable and transient exchanges.\n          ",
+                    "\n            TODO.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "reserved-2",
+                "reserved": "1",
+                "type": "bit"
+              },
+              {
+                "name": "reserved-3",
+                "reserved": "1",
+                "type": "bit"
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              },
+              {
+                "name": "arguments",
+                "doc": "\n          A set of arguments for the declaration. The syntax and semantics of these\n          arguments depends on the server implementation.\n        ",
+                "domain": "table",
+                "label": "arguments for declaration"
+              }
+            ],
+            "index": "10",
+            "synchronous": "1",
+            "label": "verify exchange exists, create if needed",
+            "rule": {
+              "name": "minimum",
+              "doc": [
+                "\n          The server SHOULD support a minimum of 16 exchanges per virtual host and\n          ideally, impose no limit except as defined by available resources.\n        ",
+                "\n          The client declares as many exchanges as it can until the server reports\n          an error; the number of exchanges successfully declared must be at least\n          sixteen.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "declare-ok",
+            "doc": "\n        This method confirms a Declare method and confirms the name of the exchange,\n        essential for automatically-named exchanges.\n      ",
+            "index": "11",
+            "synchronous": "1",
+            "label": "confirm exchange declaration",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "delete",
+            "response": {
+              "name": "delete-ok"
+            },
+            "doc": "\n        This method deletes an exchange. When an exchange is deleted all queue bindings on\n        the exchange are cancelled.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "exchange",
+                "domain": "exchange-name",
+                "assert": {
+                  "check": "notnull"
+                },
+                "rule": {
+                  "name": "exists",
+                  "doc": "\n            The client MUST NOT attempt to delete an exchange that does not exist.\n          ",
+                  "on_failure": "not-found"
+                }
+              },
+              {
+                "name": "if-unused",
+                "doc": "\n          If set, the server will only delete the exchange if it has no queue bindings. If\n          the exchange has queue bindings the server does not delete it but raises a\n          channel exception instead.\n        ",
+                "domain": "bit",
+                "label": "delete only if unused",
+                "rule": {
+                  "name": "in-use",
+                  "doc": [
+                    "\n            The server MUST NOT delete an exchange that has bindings on it, if the if-unused\n            field is true.\n          ",
+                    "\n            The client declares an exchange, binds a queue to it, then tries to delete it\n            setting if-unused to true.\n          "
+                  ],
+                  "on_failure": "precondition-failed"
+                }
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              }
+            ],
+            "index": "20",
+            "synchronous": "1",
+            "label": "delete an exchange",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "delete-ok",
+            "doc": "This method confirms the deletion of an exchange.",
+            "index": "21",
+            "synchronous": "1",
+            "label": "confirm deletion of an exchange",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          }
+        ],
+        "index": "40",
+        "label": "work with exchanges",
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "MUST"
+          },
+          {
+            "name": "client",
+            "implement": "MUST"
+          }
+        ],
+        "rule": [
+          {
+            "name": "required-types",
+            "doc": [
+              "\n        The server MUST implement these standard exchange types: fanout, direct.\n      ",
+              "\n        Client attempts to declare an exchange with each of these standard types.\n      "
+            ]
+          },
+          {
+            "name": "recommended-types",
+            "doc": [
+              "\n        The server SHOULD implement these standard exchange types: topic, headers.\n      ",
+              "\n        Client attempts to declare an exchange with each of these standard types.\n      "
+            ]
+          },
+          {
+            "name": "required-instances",
+            "doc": [
+              "\n        The server MUST, in each virtual host, pre-declare an exchange instance\n        for each standard exchange type that it implements, where the name of the\n        exchange instance, if defined, is \"amq.\" followed by the exchange type name.\n      ",
+              "\n        The server MUST, in each virtual host, pre-declare at least two direct\n        exchange instances: one named \"amq.direct\", the other with no public name\n        that serves as a default  exchange for Publish methods.\n      ",
+              "\n        Client declares a temporary queue and attempts to bind to each required\n        exchange instance (\"amq.fanout\", \"amq.direct\", \"amq.topic\", and \"amq.headers\"\n        if those types are defined).\n      "
+            ]
+          },
+          {
+            "name": "default-exchange",
+            "doc": [
+              "\n        The server MUST pre-declare a direct exchange with no public name to act as\n        the default exchange for content Publish methods and for default queue bindings.\n      ",
+              "\n        Client checks that the default exchange is active by specifying a queue\n        binding with no exchange name, and publishing a message with a suitable\n        routing key but without specifying the exchange name, then ensuring that\n        the message arrives in the queue correctly.\n      "
+            ]
+          },
+          {
+            "name": "default-access",
+            "doc": "\n        The server MUST NOT allow clients to access the default exchange except\n        by specifying an empty exchange name in the Queue.Bind and content Publish\n        methods.\n      "
+          },
+          {
+            "name": "extensions",
+            "doc": "\n        The server MAY implement other exchange types as wanted.\n      "
+          }
+        ]
+      },
+      {
+        "name": "queue",
+        "doc": [
+          "\n      Queues store and forward messages. Queues can be configured in the server or created at\n      runtime. Queues must be attached to at least one exchange in order to receive messages\n      from publishers.\n    ",
+          "\n      queue               = C:DECLARE  S:DECLARE-OK\n                          \/ C:BIND     S:BIND-OK\n                          \/ C:UNBIND   S:UNBIND-OK\n                          \/ C:PURGE    S:PURGE-OK\n                          \/ C:DELETE   S:DELETE-OK\n    "
+        ],
+        "handler": "channel",
+        "method": [
+          {
+            "name": "declare",
+            "response": {
+              "name": "declare-ok"
+            },
+            "doc": "\n        This method creates or checks a queue. When creating a new queue the client can\n        specify various properties that control the durability of the queue and its\n        contents, and the level of sharing for the queue.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "domain": "queue-name",
+                "rule": [
+                  {
+                    "name": "default-name",
+                    "doc": [
+                      "\n            The queue name MAY be empty, in which case the server MUST create a new\n            queue with a unique generated name and return this to the client in the\n            Declare-Ok method.\n          ",
+                      "\n            Client attempts to declare several queues with an empty name. The client then\n            verifies that the server-assigned names are unique and different.\n          "
+                    ]
+                  },
+                  {
+                    "name": "reserved",
+                    "doc": [
+                      "\n            Queue names starting with \"amq.\" are reserved for pre-declared and\n            standardised queues. The client MAY declare a queue starting with\n            \"amq.\" if the passive option is set, or the queue already exists.\n          ",
+                      "\n            The client attempts to declare a non-existing queue starting with\n            \"amq.\" and with the passive option set to zero.\n          "
+                    ],
+                    "on_failure": "access-refused"
+                  },
+                  {
+                    "name": "syntax",
+                    "doc": [
+                      "\n            The queue name can be empty, or a sequence of these characters:\n            letters, digits, hyphen, underscore, period, or colon.\n          ",
+                      "\n            The client attempts to declare a queue with an illegal name.\n          "
+                    ],
+                    "on_failure": "precondition-failed"
+                  }
+                ]
+              },
+              {
+                "name": "passive",
+                "doc": "\n          If set, the server will reply with Declare-Ok if the queue already\n          exists with the same name, and raise an error if not.  The client can\n          use this to check whether a queue exists without modifying the\n          server state.  When set, all other method fields except name and no-wait\n          are ignored.  A declare with both passive and no-wait has no effect.\n          Arguments are compared for semantic equivalence.\n        ",
+                "domain": "bit",
+                "label": "do not create queue",
+                "rule": [
+                  {
+                    "name": "passive",
+                    "doc": [
+                      "\n            The client MAY ask the server to assert that a queue exists without\n            creating the queue if not.  If the queue does not exist, the server\n            treats this as a failure.\n          ",
+                      "\n            Client declares an existing queue with the passive option and expects\n            the server to respond with a declare-ok. Client then attempts to declare\n            a non-existent queue with the passive option, and the server must close\n            the channel with the correct reply-code.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "equivalent",
+                    "doc": [
+                      "\n            If not set and the queue exists, the server MUST check that the\n            existing queue has the same values for durable, exclusive, auto-delete,\n            and arguments fields.  The server MUST respond with Declare-Ok if the\n            requested queue matches these fields, and MUST raise a channel exception\n            if not.\n          ",
+                      "\n            TODO.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "durable",
+                "doc": "\n          If set when creating a new queue, the queue will be marked as durable. Durable\n          queues remain active when a server restarts. Non-durable queues (transient\n          queues) are purged if\/when a server restarts. Note that durable queues do not\n          necessarily hold persistent messages, although it does not make sense to send\n          persistent messages to a transient queue.\n        ",
+                "domain": "bit",
+                "label": "request a durable queue",
+                "rule": [
+                  {
+                    "name": "persistence",
+                    "doc": [
+                      "The server MUST recreate the durable queue after a restart.",
+                      "\n            Client declares a durable queue. The server is then restarted. The client\n            then attempts to send a message to the queue. The message should be successfully\n            delivered.\n          "
+                    ]
+                  },
+                  {
+                    "name": "types",
+                    "doc": [
+                      "The server MUST support both durable and transient queues.",
+                      "\n            A client declares two named queues, one durable and one transient.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "exclusive",
+                "doc": "\n          Exclusive queues may only be accessed by the current connection, and are\n          deleted when that connection closes.  Passive declaration of an exclusive\n          queue by other connections are not allowed.\n        ",
+                "domain": "bit",
+                "label": "request an exclusive queue",
+                "rule": [
+                  {
+                    "name": "types",
+                    "doc": [
+                      "\n            The server MUST support both exclusive (private) and non-exclusive (shared)\n            queues.\n          ",
+                      "\n            A client declares two named queues, one exclusive and one non-exclusive.\n          "
+                    ]
+                  },
+                  {
+                    "name": "exclusive",
+                    "doc": [
+                      "\n            The client MAY NOT attempt to use a queue that was declared as exclusive\n            by another still-open connection.\n          ",
+                      "\n            One client declares an exclusive queue. A second client on a different\n            connection attempts to declare, bind, consume, purge, delete, or declare\n            a queue of the same name.\n          "
+                    ],
+                    "on_failure": "resource-locked"
+                  }
+                ]
+              },
+              {
+                "name": "auto-delete",
+                "doc": "\n          If set, the queue is deleted when all consumers have finished using it.  The last\n          consumer can be cancelled either explicitly or because its channel is closed. If\n          there was no consumer ever on the queue, it won't be deleted.  Applications can\n          explicitly delete auto-delete queues using the Delete method as normal.\n        ",
+                "domain": "bit",
+                "label": "auto-delete queue when unused",
+                "rule": {
+                  "name": "pre-existence",
+                  "doc": [
+                    "\n            The server MUST ignore the auto-delete field if the queue already exists.\n          ",
+                    "\n            Client declares two named queues, one as auto-delete and one explicit-delete.\n            Client then attempts to declare the two queues using the same names again,\n            but reversing the value of the auto-delete field in each case. Verify that the\n            queues still exist with the original auto-delete flag values.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              },
+              {
+                "name": "arguments",
+                "doc": "\n          A set of arguments for the declaration. The syntax and semantics of these\n          arguments depends on the server implementation.\n        ",
+                "domain": "table",
+                "label": "arguments for declaration"
+              }
+            ],
+            "index": "10",
+            "synchronous": "1",
+            "label": "declare queue, create if needed",
+            "rule": [
+              {
+                "name": "default-binding",
+                "doc": [
+                  "\n          The server MUST create a default binding for a newly-declared queue to the\n          default exchange, which is an exchange of type 'direct' and use the queue\n          name as the routing key.\n        ",
+                  "\n          Client declares a new queue, and then without explicitly binding it to an\n          exchange, attempts to send a message through the default exchange binding,\n          i.e. publish a message to the empty exchange, with the queue name as routing\n          key.\n        "
+                ]
+              },
+              {
+                "name": "minimum-queues",
+                "doc": [
+                  "\n          The server SHOULD support a minimum of 256 queues per virtual host and ideally,\n          impose no limit except as defined by available resources.\n        ",
+                  "\n          Client attempts to declare as many queues as it can until the server reports\n          an error.  The resulting count must at least be 256.\n        "
+                ]
+              }
+            ],
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "declare-ok",
+            "doc": "\n        This method confirms a Declare method and confirms the name of the queue, essential\n        for automatically-named queues.\n      ",
+            "field": [
+              {
+                "name": "queue",
+                "doc": "\n          Reports the name of the queue. If the server generated a queue name, this field\n          contains that name.\n        ",
+                "domain": "queue-name",
+                "assert": {
+                  "check": "notnull"
+                }
+              },
+              {
+                "name": "message-count",
+                "domain": "message-count"
+              },
+              {
+                "name": "consumer-count",
+                "doc": "\n          Reports the number of active consumers for the queue. Note that consumers can\n          suspend activity (Channel.Flow) in which case they do not appear in this count.\n        ",
+                "domain": "long",
+                "label": "number of consumers"
+              }
+            ],
+            "index": "11",
+            "synchronous": "1",
+            "label": "confirms a queue definition",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "bind",
+            "response": {
+              "name": "bind-ok"
+            },
+            "doc": "\n        This method binds a queue to an exchange. Until a queue is bound it will not\n        receive any messages. In a classic messaging model, store-and-forward queues\n        are bound to a direct exchange and subscription queues are bound to a topic\n        exchange.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to bind.",
+                "domain": "queue-name",
+                "rule": [
+                  {
+                    "name": "queue-known",
+                    "doc": [
+                      "\n            The client MUST either specify a queue name or have previously declared a\n            queue on the same channel\n          ",
+                      "\n            The client opens a channel and attempts to bind an unnamed queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to bind a queue that does not exist.\n          ",
+                      "\n            The client attempts to bind a non-existent queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  }
+                ]
+              },
+              {
+                "name": "exchange",
+                "domain": "exchange-name",
+                "label": "name of the exchange to bind to",
+                "rule": [
+                  {
+                    "name": "exchange-existence",
+                    "doc": [
+                      "\n            A client MUST NOT be allowed to bind a queue to a non-existent exchange.\n          ",
+                      "\n            A client attempts to bind an named queue to a undeclared exchange.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "default-exchange",
+                    "doc": [
+                      "\n            The server MUST accept a blank exchange name to mean the default exchange.\n          ",
+                      "\n            The client declares a queue and binds it to a blank exchange name.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "routing-key",
+                "doc": "\n          Specifies the routing key for the binding. The routing key is used for routing\n          messages depending on the exchange configuration. Not all exchanges use a\n          routing key - refer to the specific exchange documentation.  If the queue name\n          is empty, the server uses the last queue declared on the channel.  If the\n          routing key is also empty, the server uses this queue name for the routing\n          key as well.  If the queue name is provided but the routing key is empty, the\n          server does the binding with that empty routing key.  The meaning of empty\n          routing keys depends on the exchange implementation.\n        ",
+                "domain": "shortstr",
+                "label": "message routing key",
+                "rule": {
+                  "name": "direct-exchange-key-matching",
+                  "doc": "\n            If a message queue binds to a direct exchange using routing key K and a\n            publisher sends the exchange a message with routing key R, then the message\n            MUST be passed to the message queue if K = R.\n          "
+                }
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              },
+              {
+                "name": "arguments",
+                "doc": "\n          A set of arguments for the binding. The syntax and semantics of these arguments\n          depends on the exchange class.\n        ",
+                "domain": "table",
+                "label": "arguments for binding"
+              }
+            ],
+            "index": "20",
+            "synchronous": "1",
+            "label": "bind queue to an exchange",
+            "rule": [
+              {
+                "name": "duplicates",
+                "doc": [
+                  "\n          A server MUST allow ignore duplicate bindings - that is, two or more bind\n          methods for a specific queue, with identical arguments - without treating these\n          as an error.\n        ",
+                  "\n          A client binds a named queue to an exchange. The client then repeats the bind\n          (with identical arguments).\n        "
+                ]
+              },
+              {
+                "name": "unique",
+                "doc": [
+                  "\n          A server MUST not deliver the same message more than once to a queue, even if\n          the queue has multiple bindings that match the message.\n        ",
+                  "\n          A client declares a named queue and binds it using multiple bindings to the\n          amq.topic exchange. The client then publishes a message that matches all its\n          bindings.\n        "
+                ]
+              },
+              {
+                "name": "transient-exchange",
+                "doc": [
+                  "\n          The server MUST allow a durable queue to bind to a transient exchange.\n        ",
+                  "\n          A client declares a transient exchange. The client then declares a named durable\n          queue and then attempts to bind the transient exchange to the durable queue.\n        "
+                ]
+              },
+              {
+                "name": "durable-exchange",
+                "doc": [
+                  "\n          Bindings of durable queues to durable exchanges are automatically durable\n          and the server MUST restore such bindings after a server restart.\n        ",
+                  "\n          A server declares a named durable queue and binds it to a durable exchange. The\n          server is restarted. The client then attempts to use the queue\/exchange combination.\n        "
+                ]
+              },
+              {
+                "name": "binding-count",
+                "doc": [
+                  "\n          The server SHOULD support at least 4 bindings per queue, and ideally, impose no\n          limit except as defined by available resources.\n        ",
+                  "\n          A client declares a named queue and attempts to bind it to 4 different\n          exchanges.\n        "
+                ]
+              }
+            ],
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "bind-ok",
+            "doc": "This method confirms that the bind was successful.",
+            "index": "21",
+            "synchronous": "1",
+            "label": "confirm bind successful",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "unbind",
+            "response": {
+              "name": "unbind-ok"
+            },
+            "doc": "This method unbinds a queue from an exchange.",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to unbind.",
+                "domain": "queue-name",
+                "rule": [
+                  {
+                    "name": "queue-known",
+                    "doc": [
+                      "\n            The client MUST either specify a queue name or have previously declared a\n            queue on the same channel\n          ",
+                      "\n            The client opens a channel and attempts to unbind an unnamed queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to unbind a queue that does not exist.\n          ",
+                      "\n            The client attempts to unbind a non-existent queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  }
+                ]
+              },
+              {
+                "name": "exchange",
+                "doc": "The name of the exchange to unbind from.",
+                "domain": "exchange-name",
+                "rule": [
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to unbind a queue from an exchange that\n            does not exist.\n          ",
+                      "\n            The client attempts to unbind a queue from a non-existent exchange.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "default-exchange",
+                    "doc": [
+                      "\n            The server MUST accept a blank exchange name to mean the default exchange.\n          ",
+                      "\n            The client declares a queue and binds it to a blank exchange name.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "routing-key",
+                "doc": "Specifies the routing key of the binding to unbind.",
+                "domain": "shortstr",
+                "label": "routing key of binding"
+              },
+              {
+                "name": "arguments",
+                "doc": "Specifies the arguments of the binding to unbind.",
+                "domain": "table",
+                "label": "arguments of binding"
+              }
+            ],
+            "index": "50",
+            "synchronous": "1",
+            "label": "unbind a queue from an exchange",
+            "rule": {
+              "name": "01",
+              "doc": "If a unbind fails, the server MUST raise a connection exception."
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "unbind-ok",
+            "doc": "This method confirms that the unbind was successful.",
+            "index": "51",
+            "synchronous": "1",
+            "label": "confirm unbind successful",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "purge",
+            "response": {
+              "name": "purge-ok"
+            },
+            "doc": "\n        This method removes all messages from a queue which are not awaiting\n        acknowledgment.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to purge.",
+                "domain": "queue-name",
+                "rule": [
+                  {
+                    "name": "queue-known",
+                    "doc": [
+                      "\n            The client MUST either specify a queue name or have previously declared a\n            queue on the same channel\n          ",
+                      "\n            The client opens a channel and attempts to purge an unnamed queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to purge a queue that does not exist.\n          ",
+                      "\n            The client attempts to purge a non-existent queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  }
+                ]
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              }
+            ],
+            "index": "30",
+            "synchronous": "1",
+            "label": "purge a queue",
+            "rule": [
+              {
+                "name": "02",
+                "doc": "\n          The server MUST NOT purge messages that have already been sent to a client\n          but not yet acknowledged.\n        "
+              },
+              {
+                "name": "03",
+                "doc": "\n          The server MAY implement a purge queue or log that allows system administrators\n          to recover accidentally-purged messages. The server SHOULD NOT keep purged\n          messages in the same storage spaces as the live messages since the volumes of\n          purged messages may get very large.\n        "
+              }
+            ],
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "purge-ok",
+            "doc": "This method confirms the purge of a queue.",
+            "field": {
+              "name": "message-count",
+              "doc": "\n          Reports the number of messages purged.\n        ",
+              "domain": "message-count"
+            },
+            "index": "31",
+            "synchronous": "1",
+            "label": "confirms a queue purge",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "delete",
+            "response": {
+              "name": "delete-ok"
+            },
+            "doc": "\n        This method deletes a queue. When a queue is deleted any pending messages are sent\n        to a dead-letter queue if this is defined in the server configuration, and all\n        consumers on the queue are cancelled.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to delete.",
+                "domain": "queue-name",
+                "rule": [
+                  {
+                    "name": "queue-known",
+                    "doc": [
+                      "\n            The client MUST either specify a queue name or have previously declared a\n            queue on the same channel\n          ",
+                      "\n            The client opens a channel and attempts to delete an unnamed queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to delete a queue that does not exist.\n          ",
+                      "\n            The client attempts to delete a non-existent queue.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  }
+                ]
+              },
+              {
+                "name": "if-unused",
+                "doc": "\n          If set, the server will only delete the queue if it has no consumers. If the\n          queue has consumers the server does does not delete it but raises a channel\n          exception instead.\n        ",
+                "domain": "bit",
+                "label": "delete only if unused",
+                "rule": {
+                  "name": "in-use",
+                  "doc": [
+                    "\n            The server MUST NOT delete a queue that has consumers on it, if the if-unused\n            field is true.\n          ",
+                    "\n            The client declares a queue, and consumes from it, then tries to delete it\n            setting if-unused to true.\n          "
+                  ],
+                  "on_failure": "precondition-failed"
+                }
+              },
+              {
+                "name": "if-empty",
+                "doc": "\n          If set, the server will only delete the queue if it has no messages.\n        ",
+                "domain": "bit",
+                "label": "delete only if empty",
+                "rule": {
+                  "name": "not-empty",
+                  "doc": [
+                    "\n            The server MUST NOT delete a queue that has messages on it, if the\n            if-empty field is true.\n          ",
+                    "\n            The client declares a queue, binds it and publishes some messages into it,\n            then tries to delete it setting if-empty to true.\n          "
+                  ],
+                  "on_failure": "precondition-failed"
+                }
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              }
+            ],
+            "index": "40",
+            "synchronous": "1",
+            "label": "delete a queue",
+            "rule": {
+              "name": "01",
+              "doc": "\n          The server SHOULD use a dead-letter queue to hold messages that were pending on\n          a deleted queue, and MAY provide facilities for a system administrator to move\n          these messages back to an active queue.\n        "
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "delete-ok",
+            "doc": "This method confirms the deletion of a queue.",
+            "field": {
+              "name": "message-count",
+              "doc": "Reports the number of messages deleted.",
+              "domain": "message-count"
+            },
+            "index": "41",
+            "synchronous": "1",
+            "label": "confirm deletion of a queue",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          }
+        ],
+        "index": "50",
+        "label": "work with queues",
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "MUST"
+          },
+          {
+            "name": "client",
+            "implement": "MUST"
+          }
+        ]
+      },
+      {
+        "name": "basic",
+        "doc": [
+          "\n      The Basic class provides methods that support an industry-standard messaging model.\n    ",
+          "\n      basic               = C:QOS S:QOS-OK\n                          \/ C:CONSUME S:CONSUME-OK\n                          \/ C:CANCEL S:CANCEL-OK\n                          \/ C:PUBLISH content\n                          \/ S:RETURN content\n                          \/ S:DELIVER content\n                          \/ C:GET ( S:GET-OK content \/ S:GET-EMPTY )\n                          \/ C:ACK\n                          \/ C:REJECT\n                          \/ C:RECOVER-ASYNC\n                          \/ C:RECOVER S:RECOVER-OK\n    "
+        ],
+        "handler": "channel",
+        "field": [
+          {
+            "name": "content-type",
+            "domain": "shortstr",
+            "label": "MIME content type"
+          },
+          {
+            "name": "content-encoding",
+            "domain": "shortstr",
+            "label": "MIME content encoding"
+          },
+          {
+            "name": "headers",
+            "domain": "table",
+            "label": "message header field table"
+          },
+          {
+            "name": "delivery-mode",
+            "domain": "octet",
+            "label": "non-persistent (1) or persistent (2)"
+          },
+          {
+            "name": "priority",
+            "domain": "octet",
+            "label": "message priority, 0 to 9"
+          },
+          {
+            "name": "correlation-id",
+            "domain": "shortstr",
+            "label": "application correlation identifier"
+          },
+          {
+            "name": "reply-to",
+            "domain": "shortstr",
+            "label": "address to reply to"
+          },
+          {
+            "name": "expiration",
+            "domain": "shortstr",
+            "label": "message expiration specification"
+          },
+          {
+            "name": "message-id",
+            "domain": "shortstr",
+            "label": "application message identifier"
+          },
+          {
+            "name": "timestamp",
+            "domain": "timestamp",
+            "label": "message timestamp"
+          },
+          {
+            "name": "type",
+            "domain": "shortstr",
+            "label": "message type name"
+          },
+          {
+            "name": "user-id",
+            "domain": "shortstr",
+            "label": "creating user id"
+          },
+          {
+            "name": "app-id",
+            "domain": "shortstr",
+            "label": "creating application id"
+          },
+          {
+            "name": "reserved",
+            "domain": "shortstr",
+            "label": "reserved, must be empty"
+          }
+        ],
+        "method": [
+          {
+            "name": "qos",
+            "response": {
+              "name": "qos-ok"
+            },
+            "doc": "\n        This method requests a specific quality of service. The QoS can be specified for the\n        current channel or for all channels on the connection. The particular properties and\n        semantics of a qos method always depend on the content class semantics. Though the\n        qos method could in principle apply to both peers, it is currently meaningful only\n        for the server.\n      ",
+            "field": [
+              {
+                "name": "prefetch-size",
+                "doc": "\n          The client can request that messages be sent in advance so that when the client\n          finishes processing a message, the following message is already held locally,\n          rather than needing to be sent down the channel. Prefetching gives a performance\n          improvement. This field specifies the prefetch window size in octets. The server\n          will send a message in advance if it is equal to or smaller in size than the\n          available prefetch size (and also falls into other prefetch limits). May be set\n          to zero, meaning \"no specific limit\", although other prefetch limits may still\n          apply. The prefetch-size is ignored if the no-ack option is set.\n        ",
+                "domain": "long",
+                "label": "prefetch window in octets",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The server MUST ignore this setting when the client is not processing any\n            messages - i.e. the prefetch size does not limit the transfer of single\n            messages to a client, only the sending in advance of more messages while\n            the client still has one or more unacknowledged messages.\n          ",
+                    "\n            Define a QoS prefetch-size limit and send a single message that exceeds\n            that limit.  Verify that the message arrives correctly.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "prefetch-count",
+                "doc": "\n          Specifies a prefetch window in terms of whole messages. This field may be used\n          in combination with the prefetch-size field; a message will only be sent in\n          advance if both prefetch windows (and those at the channel and connection level)\n          allow it. The prefetch-count is ignored if the no-ack option is set.\n        ",
+                "domain": "short",
+                "label": "prefetch window in messages",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The server may send less data in advance than allowed by the client's\n            specified prefetch windows but it MUST NOT send more.\n          ",
+                    "\n            Define a QoS prefetch-size limit and a prefetch-count limit greater than\n            one.  Send multiple messages that exceed the prefetch size.  Verify that\n            no more than one message arrives at once.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "global",
+                "doc": "\n          By default the QoS settings apply to the current channel only. If this field is\n          set, they are applied to the entire connection.\n        ",
+                "domain": "bit",
+                "label": "apply to entire connection"
+              }
+            ],
+            "index": "10",
+            "synchronous": "1",
+            "label": "specify quality of service",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "qos-ok",
+            "doc": "\n        This method tells the client that the requested QoS levels could be handled by the\n        server. The requested QoS applies to all active consumers until a new QoS is\n        defined.\n      ",
+            "index": "11",
+            "synchronous": "1",
+            "label": "confirm the requested qos",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "consume",
+            "response": {
+              "name": "consume-ok"
+            },
+            "doc": "\n        This method asks the server to start a \"consumer\", which is a transient request for\n        messages from a specific queue. Consumers last as long as the channel they were\n        declared on, or until the client cancels them.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to consume from.",
+                "domain": "queue-name"
+              },
+              {
+                "name": "consumer-tag",
+                "doc": "\n          Specifies the identifier for the consumer. The consumer tag is local to a\n          channel, so two clients can use the same consumer tags. If this field is\n          empty the server will generate a unique tag.\n        ",
+                "domain": "consumer-tag",
+                "rule": [
+                  {
+                    "name": "01",
+                    "doc": [
+                      "\n            The client MUST NOT specify a tag that refers to an existing consumer.\n          ",
+                      "\n            Attempt to create two consumers with the same non-empty tag, on the\n            same channel.\n          "
+                    ],
+                    "on_failure": "not-allowed"
+                  },
+                  {
+                    "name": "02",
+                    "doc": [
+                      "\n            The consumer tag is valid only within the channel from which the\n            consumer was created. I.e. a client MUST NOT create a consumer in one\n            channel and then use it in another.\n          ",
+                      "\n            Attempt to create a consumer in one channel, then use in another channel,\n            in which consumers have also been created (to test that the server uses\n            unique consumer tags).\n          "
+                    ],
+                    "on_failure": "not-allowed"
+                  }
+                ]
+              },
+              {
+                "name": "no-local",
+                "domain": "no-local"
+              },
+              {
+                "name": "no-ack",
+                "domain": "no-ack"
+              },
+              {
+                "name": "exclusive",
+                "doc": "\n          Request exclusive consumer access, meaning only this consumer can access the\n          queue.\n        ",
+                "domain": "bit",
+                "label": "request exclusive access",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The client MAY NOT gain exclusive access to a queue that already has\n            active consumers.\n          ",
+                    "\n            Open two connections to a server, and in one connection declare a shared\n            (non-exclusive) queue and then consume from the queue.  In the second\n            connection attempt to consume from the same queue using the exclusive\n            option.\n          "
+                  ],
+                  "on_failure": "access-refused"
+                }
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              },
+              {
+                "name": "arguments",
+                "doc": "\n          A set of arguments for the consume. The syntax and semantics of these\n          arguments depends on the server implementation.\n        ",
+                "domain": "table",
+                "label": "arguments for declaration"
+              }
+            ],
+            "index": "20",
+            "synchronous": "1",
+            "label": "start a queue consumer",
+            "rule": {
+              "name": "01",
+              "doc": [
+                "\n          The server SHOULD support at least 16 consumers per queue, and ideally, impose\n          no limit except as defined by available resources.\n        ",
+                "\n          Declare a queue and create consumers on that queue until the server closes the\n          connection. Verify that the number of consumers created was at least sixteen\n          and report the total number.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "consume-ok",
+            "doc": "\n        The server provides the client with a consumer tag, which is used by the client\n        for methods called on the consumer at a later stage.\n      ",
+            "field": {
+              "name": "consumer-tag",
+              "doc": "\n          Holds the consumer tag specified by the client or provided by the server.\n        ",
+              "domain": "consumer-tag"
+            },
+            "index": "21",
+            "synchronous": "1",
+            "label": "confirm a new consumer",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "cancel",
+            "response": {
+              "name": "cancel-ok"
+            },
+            "doc": "\n        This method cancels a consumer. This does not affect already delivered\n        messages, but it does mean the server will not send any more messages for\n        that consumer. The client may receive an arbitrary number of messages in\n        between sending the cancel method and receiving the cancel-ok reply.\n      ",
+            "field": [
+              {
+                "name": "consumer-tag",
+                "domain": "consumer-tag"
+              },
+              {
+                "name": "no-wait",
+                "domain": "no-wait"
+              }
+            ],
+            "index": "30",
+            "synchronous": "1",
+            "label": "end a queue consumer",
+            "rule": {
+              "name": "01",
+              "doc": [
+                "\n          If the queue does not exist the server MUST ignore the cancel method, so\n          long as the consumer tag is valid for that channel.\n        ",
+                "\n          TODO.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "cancel-ok",
+            "doc": "\n        This method confirms that the cancellation was completed.\n      ",
+            "field": {
+              "name": "consumer-tag",
+              "domain": "consumer-tag"
+            },
+            "index": "31",
+            "synchronous": "1",
+            "label": "confirm a cancelled consumer",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "publish",
+            "doc": "\n        This method publishes a message to a specific exchange. The message will be routed\n        to queues as defined by the exchange configuration and distributed to any active\n        consumers when the transaction, if any, is committed.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "exchange",
+                "doc": "\n          Specifies the name of the exchange to publish to. The exchange name can be\n          empty, meaning the default exchange. If the exchange name is specified, and that\n          exchange does not exist, the server will raise a channel exception.\n        ",
+                "domain": "exchange-name",
+                "rule": [
+                  {
+                    "name": "must-exist",
+                    "doc": [
+                      "\n            The client MUST NOT attempt to publish a content to an exchange that\n            does not exist.\n          ",
+                      "\n            The client attempts to publish a content to a non-existent exchange.\n          "
+                    ],
+                    "on_failure": "not-found"
+                  },
+                  {
+                    "name": "default-exchange",
+                    "doc": [
+                      "\n            The server MUST accept a blank exchange name to mean the default exchange.\n          ",
+                      "\n            The client declares a queue and binds it to a blank exchange name.\n          "
+                    ]
+                  },
+                  {
+                    "name": "02",
+                    "doc": [
+                      "\n            If the exchange was declared as an internal exchange, the server MUST raise\n            a channel exception with a reply code 403 (access refused).\n          ",
+                      "\n            TODO.\n          "
+                    ]
+                  },
+                  {
+                    "name": "03",
+                    "doc": [
+                      "\n            The exchange MAY refuse basic content in which case it MUST raise a channel\n            exception with reply code 540 (not implemented).\n          ",
+                      "\n            TODO.\n          "
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "routing-key",
+                "doc": "\n          Specifies the routing key for the message. The routing key is used for routing\n          messages depending on the exchange configuration.\n        ",
+                "domain": "shortstr",
+                "label": "Message routing key"
+              },
+              {
+                "name": "mandatory",
+                "doc": "\n          This flag tells the server how to react if the message cannot be routed to a\n          queue. If this flag is set, the server will return an unroutable message with a\n          Return method. If this flag is zero, the server silently drops the message.\n        ",
+                "domain": "bit",
+                "label": "indicate mandatory routing",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The server SHOULD implement the mandatory flag.\n          ",
+                    "\n            TODO.\n          "
+                  ]
+                }
+              },
+              {
+                "name": "immediate",
+                "doc": "\n          This flag tells the server how to react if the message cannot be routed to a\n          queue consumer immediately. If this flag is set, the server will return an\n          undeliverable message with a Return method. If this flag is zero, the server\n          will queue the message, but with no guarantee that it will ever be consumed.\n        ",
+                "domain": "bit",
+                "label": "request immediate delivery",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The server SHOULD implement the immediate flag.\n          ",
+                    "\n            TODO.\n          "
+                  ]
+                }
+              }
+            ],
+            "content": "1",
+            "index": "40",
+            "label": "publish a message",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "return",
+            "doc": "\n        This method returns an undeliverable message that was published with the \"immediate\"\n        flag set, or an unroutable message published with the \"mandatory\" flag set. The\n        reply code and text provide information about the reason that the message was\n        undeliverable.\n      ",
+            "field": [
+              {
+                "name": "reply-code",
+                "domain": "reply-code"
+              },
+              {
+                "name": "reply-text",
+                "domain": "reply-text"
+              },
+              {
+                "name": "exchange",
+                "doc": "\n          Specifies the name of the exchange that the message was originally published\n          to.  May be empty, meaning the default exchange.\n        ",
+                "domain": "exchange-name"
+              },
+              {
+                "name": "routing-key",
+                "doc": "\n          Specifies the routing key name specified when the message was published.\n        ",
+                "domain": "shortstr",
+                "label": "Message routing key"
+              }
+            ],
+            "content": "1",
+            "index": "50",
+            "label": "return a failed message",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "deliver",
+            "doc": "\n        This method delivers a message to the client, via a consumer. In the asynchronous\n        message delivery model, the client starts a consumer using the Consume method, then\n        the server responds with Deliver methods as and when messages arrive for that\n        consumer.\n      ",
+            "field": [
+              {
+                "name": "consumer-tag",
+                "domain": "consumer-tag"
+              },
+              {
+                "name": "delivery-tag",
+                "domain": "delivery-tag"
+              },
+              {
+                "name": "redelivered",
+                "domain": "redelivered"
+              },
+              {
+                "name": "exchange",
+                "doc": "\n          Specifies the name of the exchange that the message was originally published to.\n          May be empty, indicating the default exchange.\n        ",
+                "domain": "exchange-name"
+              },
+              {
+                "name": "routing-key",
+                "doc": "Specifies the routing key name specified when the message was published.",
+                "domain": "shortstr",
+                "label": "Message routing key"
+              }
+            ],
+            "content": "1",
+            "index": "60",
+            "label": "notify the client of a consumer message",
+            "rule": {
+              "name": "01",
+              "doc": [
+                "\n          The server SHOULD track the number of times a message has been delivered to\n          clients and when a message is redelivered a certain number of times - e.g. 5\n          times - without being acknowledged, the server SHOULD consider the message to be\n          unprocessable (possibly causing client applications to abort), and move the\n          message to a dead letter queue.\n        ",
+                "\n          TODO.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "get",
+            "response": [
+              {
+                "name": "get-ok"
+              },
+              {
+                "name": "get-empty"
+              }
+            ],
+            "doc": "\n        This method provides a direct access to the messages in a queue using a synchronous\n        dialogue that is designed for specific types of application where synchronous\n        functionality is more important than performance.\n      ",
+            "field": [
+              {
+                "name": "reserved-1",
+                "reserved": "1",
+                "type": "short"
+              },
+              {
+                "name": "queue",
+                "doc": "Specifies the name of the queue to get a message from.",
+                "domain": "queue-name"
+              },
+              {
+                "name": "no-ack",
+                "domain": "no-ack"
+              }
+            ],
+            "index": "70",
+            "synchronous": "1",
+            "label": "direct access to a queue",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "get-ok",
+            "doc": "\n        This method delivers a message to the client following a get method. A message\n        delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the\n        get method.\n      ",
+            "field": [
+              {
+                "name": "delivery-tag",
+                "domain": "delivery-tag"
+              },
+              {
+                "name": "redelivered",
+                "domain": "redelivered"
+              },
+              {
+                "name": "exchange",
+                "doc": "\n          Specifies the name of the exchange that the message was originally published to.\n          If empty, the message was published to the default exchange.\n        ",
+                "domain": "exchange-name"
+              },
+              {
+                "name": "routing-key",
+                "doc": "Specifies the routing key name specified when the message was published.",
+                "domain": "shortstr",
+                "label": "Message routing key"
+              },
+              {
+                "name": "message-count",
+                "domain": "message-count"
+              }
+            ],
+            "content": "1",
+            "index": "71",
+            "synchronous": "1",
+            "label": "provide client with a message",
+            "chassis": {
+              "name": "client",
+              "implement": "MAY"
+            }
+          },
+          {
+            "name": "get-empty",
+            "doc": "\n        This method tells the client that the queue has no messages available for the\n        client.\n      ",
+            "field": {
+              "name": "reserved-1",
+              "reserved": "1",
+              "type": "shortstr"
+            },
+            "index": "72",
+            "synchronous": "1",
+            "label": "indicate no messages available",
+            "chassis": {
+              "name": "client",
+              "implement": "MAY"
+            }
+          },
+          {
+            "name": "ack",
+            "doc": "\n        This method acknowledges one or more messages delivered via the Deliver or Get-Ok\n        methods. The client can ask to confirm a single message or a set of messages up to\n        and including a specific message.\n      ",
+            "field": [
+              {
+                "name": "delivery-tag",
+                "domain": "delivery-tag"
+              },
+              {
+                "name": "multiple",
+                "doc": "\n          If set to 1, the delivery tag is treated as \"up to and including\", so that the\n          client can acknowledge multiple messages with a single method. If set to zero,\n          the delivery tag refers to a single message. If the multiple field is 1, and the\n          delivery tag is zero, tells the server to acknowledge all outstanding messages.\n        ",
+                "domain": "bit",
+                "label": "acknowledge multiple messages",
+                "rule": {
+                  "name": "exists",
+                  "doc": [
+                    "\n            The server MUST validate that a non-zero delivery-tag refers to a delivered\n            message, and raise a channel exception if this is not the case.  On a transacted\n            channel, this check MUST be done immediately and not delayed until a Tx.Commit.\n            Specifically, a client MUST not acknowledge the same message more than once.\n          ",
+                    "\n            TODO.\n          "
+                  ],
+                  "on_failure": "precondition-failed"
+                }
+              }
+            ],
+            "index": "80",
+            "label": "acknowledge one or more messages",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "reject",
+            "doc": "\n        This method allows a client to reject a message. It can be used to interrupt and\n        cancel large incoming messages, or return untreatable messages to their original\n        queue.\n      ",
+            "field": [
+              {
+                "name": "delivery-tag",
+                "domain": "delivery-tag"
+              },
+              {
+                "name": "requeue",
+                "doc": "\n          If requeue is true, the server will attempt to requeue the message.  If requeue\n          is false or the requeue  attempt fails the messages are discarded or dead-lettered.\n        ",
+                "domain": "bit",
+                "label": "requeue the message",
+                "rule": {
+                  "name": "01",
+                  "doc": [
+                    "\n            The server MUST NOT deliver the message to the same client within the\n            context of the current channel. The recommended strategy is to attempt to\n            deliver the message to an alternative consumer, and if that is not possible,\n            to move the message to a dead-letter queue. The server MAY use more\n            sophisticated tracking to hold the message on the queue and redeliver it to\n            the same client at a later stage.\n          ",
+                    "\n            TODO.\n          "
+                  ]
+                }
+              }
+            ],
+            "index": "90",
+            "label": "reject an incoming message",
+            "rule": [
+              {
+                "name": "01",
+                "doc": "\n          The server SHOULD be capable of accepting and process the Reject method while\n          sending message content with a Deliver or Get-Ok method. I.e. the server should\n          read and process incoming methods while sending output frames. To cancel a\n          partially-send content, the server sends a content body frame of size 1 (i.e.\n          with no data except the frame-end octet).\n        "
+              },
+              {
+                "name": "02",
+                "doc": [
+                  "\n          The server SHOULD interpret this method as meaning that the client is unable to\n          process the message at this time.\n        ",
+                  "\n          TODO.\n        "
+                ]
+              },
+              {
+                "name": "03",
+                "doc": [
+                  "\n          The client MUST NOT use this method as a means of selecting messages to process.\n        ",
+                  "\n          TODO.\n        "
+                ]
+              }
+            ],
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "recover-async",
+            "doc": "\n        This method asks the server to redeliver all unacknowledged messages on a\n        specified channel. Zero or more messages may be redelivered.  This method\n        is deprecated in favour of the synchronous Recover\/Recover-Ok.\n      ",
+            "field": {
+              "name": "requeue",
+              "doc": "\n          If this field is zero, the message will be redelivered to the original\n          recipient. If this bit is 1, the server will attempt to requeue the message,\n          potentially then delivering it to an alternative subscriber.\n        ",
+              "domain": "bit",
+              "label": "requeue the message"
+            },
+            "index": "100",
+            "deprecated": "1",
+            "label": "redeliver unacknowledged messages",
+            "rule": {
+              "name": "01",
+              "doc": [
+                "\n          The server MUST set the redelivered flag on all messages that are resent.\n        ",
+                "\n          TODO.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MAY"
+            }
+          },
+          {
+            "name": "recover",
+            "doc": "\n        This method asks the server to redeliver all unacknowledged messages on a\n        specified channel. Zero or more messages may be redelivered.  This method\n        replaces the asynchronous Recover.\n      ",
+            "field": {
+              "name": "requeue",
+              "doc": "\n          If this field is zero, the message will be redelivered to the original\n          recipient. If this bit is 1, the server will attempt to requeue the message,\n          potentially then delivering it to an alternative subscriber.\n        ",
+              "domain": "bit",
+              "label": "requeue the message"
+            },
+            "index": "110",
+            "label": "redeliver unacknowledged messages",
+            "rule": {
+              "name": "01",
+              "doc": [
+                "\n          The server MUST set the redelivered flag on all messages that are resent.\n        ",
+                "\n          TODO.\n        "
+              ]
+            },
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "recover-ok",
+            "doc": "\n        This method acknowledges a Basic.Recover method.\n      ",
+            "index": "111",
+            "synchronous": "1",
+            "label": "confirm recovery",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          }
+        ],
+        "index": "60",
+        "label": "work with basic content",
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "MUST"
+          },
+          {
+            "name": "client",
+            "implement": "MAY"
+          }
+        ],
+        "rule": [
+          {
+            "name": "01",
+            "doc": [
+              "\n        The server SHOULD respect the persistent property of basic messages and\n        SHOULD make a best-effort to hold persistent basic messages on a reliable\n        storage mechanism.\n      ",
+              "\n        Send a persistent message to queue, stop server, restart server and then\n        verify whether message is still present.  Assumes that queues are durable.\n        Persistence without durable queues makes no sense.\n      "
+            ]
+          },
+          {
+            "name": "02",
+            "doc": [
+              "\n        The server MUST NOT discard a persistent basic message in case of a queue\n        overflow.\n      ",
+              "\n        Declare a queue overflow situation with persistent messages and verify that\n        messages do not get lost (presumably the server will write them to disk).\n      "
+            ]
+          },
+          {
+            "name": "03",
+            "doc": [
+              "\n        The server MAY use the Channel.Flow method to slow or stop a basic message\n        publisher when necessary.\n      ",
+              "\n        Declare a queue overflow situation with non-persistent messages and verify\n        whether the server responds with Channel.Flow or not. Repeat with persistent\n        messages.\n      "
+            ]
+          },
+          {
+            "name": "04",
+            "doc": "\n        The server MAY overflow non-persistent basic messages to persistent\n        storage.\n      "
+          },
+          {
+            "name": "05",
+            "doc": "\n        The server MAY discard or dead-letter non-persistent basic messages on a\n        priority basis if the queue size exceeds some configured limit.\n      "
+          },
+          {
+            "name": "06",
+            "doc": [
+              "\n        The server MUST implement at least 2 priority levels for basic messages,\n        where priorities 0-4 and 5-9 are treated as two distinct levels.\n      ",
+              "\n        Send a number of priority 0 messages to a queue. Send one priority 9\n        message.  Consume messages from the queue and verify that the first message\n        received was priority 9.\n      "
+            ]
+          },
+          {
+            "name": "07",
+            "doc": [
+              "\n        The server MAY implement up to 10 priority levels.\n      ",
+              "\n        Send a number of messages with mixed priorities to a queue, so that all\n        priority values from 0 to 9 are exercised. A good scenario would be ten\n        messages in low-to-high priority.  Consume from queue and verify how many\n        priority levels emerge.\n      "
+            ]
+          },
+          {
+            "name": "08",
+            "doc": [
+              "\n        The server MUST deliver messages of the same priority in order irrespective of\n        their individual persistence.\n      ",
+              "\n        Send a set of messages with the same priority but different persistence\n        settings to a queue.  Consume and verify that messages arrive in same order\n        as originally published.\n      "
+            ]
+          },
+          {
+            "name": "09",
+            "doc": "\n        The server MUST support un-acknowledged delivery of Basic content, i.e.\n        consumers with the no-ack field set to TRUE.\n      "
+          },
+          {
+            "name": "10",
+            "doc": [
+              "\n        The server MUST support explicitly acknowledged delivery of Basic content,\n        i.e. consumers with the no-ack field set to FALSE.\n      ",
+              "\n        Declare a queue and a consumer using explicit acknowledgements.  Publish a\n        set of messages to the queue.  Consume the messages but acknowledge only\n        half of them.  Disconnect and reconnect, and consume from the queue.\n        Verify that the remaining messages are received.\n      "
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tx",
+        "doc": [
+          "\n      The Tx class allows publish and ack operations to be batched into atomic\n      units of work.  The intention is that all publish and ack requests issued\n      within a transaction will complete successfully or none of them will.\n      Servers SHOULD implement atomic transactions at least where all publish\n      or ack requests affect a single queue.  Transactions that cover multiple\n      queues may be non-atomic, given that queues can be created and destroyed\n      asynchronously, and such events do not form part of any transaction.\n      Further, the behaviour of transactions with respect to the immediate and\n      mandatory flags on Basic.Publish methods is not defined.\n    ",
+          "\n      tx                  = C:SELECT S:SELECT-OK\n                          \/ C:COMMIT S:COMMIT-OK\n                          \/ C:ROLLBACK S:ROLLBACK-OK\n    "
+        ],
+        "handler": "channel",
+        "method": [
+          {
+            "name": "select",
+            "response": {
+              "name": "select-ok"
+            },
+            "doc": "\n        This method sets the channel to use standard transactions. The client must use this\n        method at least once on a channel before using the Commit or Rollback methods.\n      ",
+            "index": "10",
+            "synchronous": "1",
+            "label": "select standard transaction mode",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "select-ok",
+            "doc": "\n        This method confirms to the client that the channel was successfully set to use\n        standard transactions.\n      ",
+            "index": "11",
+            "synchronous": "1",
+            "label": "confirm transaction mode",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "commit",
+            "response": {
+              "name": "commit-ok"
+            },
+            "doc": "\n        This method commits all message publications and acknowledgments performed in\n        the current transaction.  A new transaction starts immediately after a commit.\n      ",
+            "index": "20",
+            "synchronous": "1",
+            "label": "commit the current transaction",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            },
+            "rule": {
+              "name": "transacted",
+              "doc": [
+                "\n          The client MUST NOT use the Commit method on non-transacted channels.\n        ",
+                "\n          The client opens a channel and then uses Tx.Commit.\n        "
+              ],
+              "on_failure": "precondition-failed"
+            }
+          },
+          {
+            "name": "commit-ok",
+            "doc": "\n        This method confirms to the client that the commit succeeded. Note that if a commit\n        fails, the server raises a channel exception.\n      ",
+            "index": "21",
+            "synchronous": "1",
+            "label": "confirm a successful commit",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          },
+          {
+            "name": "rollback",
+            "response": {
+              "name": "rollback-ok"
+            },
+            "doc": "\n        This method abandons all message publications and acknowledgments performed in\n        the current transaction. A new transaction starts immediately after a rollback.\n        Note that unacked messages will not be automatically redelivered by rollback;\n        if that is required an explicit recover call should be issued.\n      ",
+            "index": "30",
+            "synchronous": "1",
+            "label": "abandon the current transaction",
+            "chassis": {
+              "name": "server",
+              "implement": "MUST"
+            },
+            "rule": {
+              "name": "transacted",
+              "doc": [
+                "\n          The client MUST NOT use the Rollback method on non-transacted channels.\n        ",
+                "\n          The client opens a channel and then uses Tx.Rollback.\n        "
+              ],
+              "on_failure": "precondition-failed"
+            }
+          },
+          {
+            "name": "rollback-ok",
+            "doc": "\n        This method confirms to the client that the rollback succeeded. Note that if an\n        rollback fails, the server raises a channel exception.\n      ",
+            "index": "31",
+            "synchronous": "1",
+            "label": "confirm successful rollback",
+            "chassis": {
+              "name": "client",
+              "implement": "MUST"
+            }
+          }
+        ],
+        "index": "90",
+        "label": "work with transactions",
+        "rule": [
+          {
+            "name": "not multiple queues",
+            "doc": "\n      Applications MUST NOT rely on the atomicity of transactions that\n      affect more than one queue.\n      "
+          },
+          {
+            "name": "not immediate",
+            "doc": "\n      Applications MUST NOT rely on the behaviour of transactions that\n      include messages published with the immediate option.\n      "
+          },
+          {
+            "name": "not mandatory",
+            "doc": "\n      Applications MUST NOT rely on the behaviour of transactions that\n      include messages published with the mandatory option.\n      "
+          }
+        ],
+        "chassis": [
+          {
+            "name": "server",
+            "implement": "SHOULD"
+          },
+          {
+            "name": "client",
+            "implement": "MAY"
+          }
+        ]
+      }
+    ],
+    "constant": [
+      {
+        "name": "frame-method",
+        "value": "1"
+      },
+      {
+        "name": "frame-header",
+        "value": "2"
+      },
+      {
+        "name": "frame-body",
+        "value": "3"
+      },
+      {
+        "name": "frame-heartbeat",
+        "value": "8"
+      },
+      {
+        "name": "frame-min-size",
+        "value": "4096"
+      },
+      {
+        "name": "frame-end",
+        "value": "206"
+      },
+      {
+        "name": "reply-success",
+        "doc": "\n      Indicates that the method completed successfully. This reply code is\n      reserved for future use - the current protocol design does not use positive\n      confirmation and reply codes are sent only in case of an error.\n    ",
+        "value": "200"
+      },
+      {
+        "name": "content-too-large",
+        "class": "soft-error",
+        "doc": "\n      The client attempted to transfer content larger than the server could accept\n      at the present time. The client may retry at a later time.\n    ",
+        "value": "311"
+      },
+      {
+        "name": "no-consumers",
+        "class": "soft-error",
+        "doc": "\n      When the exchange cannot deliver to a consumer when the immediate flag is\n      set. As a result of pending data on the queue or the absence of any\n      consumers of the queue.\n    ",
+        "value": "313"
+      },
+      {
+        "name": "connection-forced",
+        "class": "hard-error",
+        "doc": "\n      An operator intervened to close the connection for some reason. The client\n      may retry at some later date.\n    ",
+        "value": "320"
+      },
+      {
+        "name": "invalid-path",
+        "class": "hard-error",
+        "doc": "\n      The client tried to work with an unknown virtual host.\n    ",
+        "value": "402"
+      },
+      {
+        "name": "access-refused",
+        "class": "soft-error",
+        "doc": "\n      The client attempted to work with a server entity to which it has no\n      access due to security settings.\n    ",
+        "value": "403"
+      },
+      {
+        "name": "not-found",
+        "class": "soft-error",
+        "doc": "\n      The client attempted to work with a server entity that does not exist.\n    ",
+        "value": "404"
+      },
+      {
+        "name": "resource-locked",
+        "class": "soft-error",
+        "doc": "\n      The client attempted to work with a server entity to which it has no\n      access because another client is working with it.\n    ",
+        "value": "405"
+      },
+      {
+        "name": "precondition-failed",
+        "class": "soft-error",
+        "doc": "\n      The client requested a method that was not allowed because some precondition\n      failed.\n    ",
+        "value": "406"
+      },
+      {
+        "name": "frame-error",
+        "class": "hard-error",
+        "doc": "\n      The sender sent a malformed frame that the recipient could not decode.\n      This strongly implies a programming error in the sending peer.\n    ",
+        "value": "501"
+      },
+      {
+        "name": "syntax-error",
+        "class": "hard-error",
+        "doc": "\n      The sender sent a frame that contained illegal values for one or more\n      fields. This strongly implies a programming error in the sending peer.\n    ",
+        "value": "502"
+      },
+      {
+        "name": "command-invalid",
+        "class": "hard-error",
+        "doc": "\n      The client sent an invalid sequence of frames, attempting to perform an\n      operation that was considered invalid by the server. This usually implies\n      a programming error in the client.\n    ",
+        "value": "503"
+      },
+      {
+        "name": "channel-error",
+        "class": "hard-error",
+        "doc": "\n      The client attempted to work with a channel that had not been correctly\n      opened. This most likely indicates a fault in the client layer.\n    ",
+        "value": "504"
+      },
+      {
+        "name": "unexpected-frame",
+        "class": "hard-error",
+        "doc": "\n      The peer sent a frame that was not expected, usually in the context of\n      a content header and body.  This strongly indicates a fault in the peer's\n      content processing.\n    ",
+        "value": "505"
+      },
+      {
+        "name": "resource-error",
+        "class": "hard-error",
+        "doc": "\n      The server could not complete the method because it lacked sufficient\n      resources. This may be due to the client creating too many of some type\n      of entity.\n    ",
+        "value": "506"
+      },
+      {
+        "name": "not-allowed",
+        "class": "hard-error",
+        "doc": "\n      The client tried to work with some entity in a manner that is prohibited\n      by the server, due to security settings or by some other criteria.\n    ",
+        "value": "530"
+      },
+      {
+        "name": "not-implemented",
+        "class": "hard-error",
+        "doc": "\n      The client tried to use functionality that is not implemented in the\n      server.\n    ",
+        "value": "540"
+      },
+      {
+        "name": "internal-error",
+        "class": "hard-error",
+        "doc": "\n      The server could not complete the method because of an internal error.\n      The server may require intervention by an operator in order to resume\n      normal operations.\n    ",
+        "value": "541"
+      }
+    ],
+    "domain": [
+      {
+        "name": "class-id",
+        "type": "short"
+      },
+      {
+        "name": "consumer-tag",
+        "doc": "\n      Identifier for the consumer, valid within the current channel.\n    ",
+        "type": "shortstr",
+        "label": "consumer tag"
+      },
+      {
+        "name": "delivery-tag",
+        "doc": "\n      The server-assigned and channel-specific delivery tag\n    ",
+        "type": "longlong",
+        "label": "server-assigned delivery tag",
+        "rule": [
+          {
+            "name": "channel-local",
+            "doc": "\n        The delivery tag is valid only within the channel from which the message was\n        received. I.e. a client MUST NOT receive a message on one channel and then\n        acknowledge it on another.\n      "
+          },
+          {
+            "name": "non-zero",
+            "doc": "\n        The server MUST NOT use a zero value for delivery tags. Zero is reserved\n        for client use, meaning \"all messages so far received\".\n      "
+          }
+        ]
+      },
+      {
+        "name": "exchange-name",
+        "doc": "\n      The exchange name is a client-selected string that identifies the exchange for\n      publish methods.\n    ",
+        "type": "shortstr",
+        "assert": [
+          {
+            "value": "127",
+            "check": "length"
+          },
+          {
+            "value": "^[a-zA-Z0-9-_.:]*$",
+            "check": "regexp"
+          }
+        ],
+        "label": "exchange name"
+      },
+      {
+        "name": "method-id",
+        "type": "short"
+      },
+      {
+        "name": "no-ack",
+        "doc": "\n      If this field is set the server does not expect acknowledgements for\n      messages. That is, when a message is delivered to the client the server\n      assumes the delivery will succeed and immediately dequeues it. This\n      functionality may increase performance but at the cost of reliability.\n      Messages can get lost if a client dies before they are delivered to the\n      application.\n    ",
+        "type": "bit",
+        "label": "no acknowledgement needed"
+      },
+      {
+        "name": "no-local",
+        "doc": "\n      If the no-local field is set the server will not send messages to the connection that\n      published them.\n    ",
+        "type": "bit",
+        "label": "do not deliver own messages"
+      },
+      {
+        "name": "no-wait",
+        "doc": "\n      If set, the server will not respond to the method. The client should not wait\n      for a reply method. If the server could not complete the method it will raise a\n      channel or connection exception.\n    ",
+        "type": "bit",
+        "label": "do not send reply method"
+      },
+      {
+        "name": "path",
+        "doc": "\n      Unconstrained.\n    ",
+        "type": "shortstr",
+        "assert": [
+          {
+            "check": "notnull"
+          },
+          {
+            "value": "127",
+            "check": "length"
+          }
+        ]
+      },
+      {
+        "name": "peer-properties",
+        "doc": "\n      This table provides a set of peer properties, used for identification, debugging,\n      and general information.\n    ",
+        "type": "table"
+      },
+      {
+        "name": "queue-name",
+        "doc": "\n      The queue name identifies the queue within the vhost.  In methods where the queue\n      name may be blank, and that has no specific significance, this refers to the\n      'current' queue for the channel, meaning the last queue that the client declared\n      on the channel.  If the client did not declare a queue, and the method needs a\n      queue name, this will result in a 502 (syntax error) channel exception.\n    ",
+        "type": "shortstr",
+        "assert": [
+          {
+            "value": "127",
+            "check": "length"
+          },
+          {
+            "value": "^[a-zA-Z0-9-_.:]*$",
+            "check": "regexp"
+          }
+        ],
+        "label": "queue name"
+      },
+      {
+        "name": "redelivered",
+        "doc": "\n      This indicates that the message has been previously delivered to this or\n      another client.\n    ",
+        "type": "bit",
+        "label": "message is being redelivered",
+        "rule": [
+          {
+            "name": "implementation",
+            "doc": [
+              "\n        The server SHOULD try to signal redelivered messages when it can. When\n        redelivering a message that was not successfully acknowledged, the server\n        SHOULD deliver it to the original client if possible.\n      ",
+              "\n        Declare a shared queue and publish a message to the queue.  Consume the\n        message using explicit acknowledgements, but do not acknowledge the\n        message.  Close the connection, reconnect, and consume from the queue\n        again.  The message should arrive with the redelivered flag set.\n      "
+            ]
+          },
+          {
+            "name": "hinting",
+            "doc": "\n        The client MUST NOT rely on the redelivered field but should take it as a\n        hint that the message may already have been processed. A fully robust\n        client must be able to track duplicate received messages on non-transacted,\n        and locally-transacted channels.\n      "
+          }
+        ]
+      },
+      {
+        "name": "message-count",
+        "doc": "\n      The number of messages in the queue, which will be zero for newly-declared\n      queues. This is the number of messages present in the queue, and committed\n      if the channel on which they were published is transacted, that are not\n      waiting acknowledgement.\n    ",
+        "type": "long",
+        "label": "number of messages in queue"
+      },
+      {
+        "name": "reply-code",
+        "doc": "\n      The reply code. The AMQ reply codes are defined as constants at the start\n      of this formal specification.\n    ",
+        "type": "short",
+        "assert": {
+          "check": "notnull"
+        },
+        "label": "reply code from server"
+      },
+      {
+        "name": "reply-text",
+        "doc": "\n      The localised reply text. This text can be logged as an aid to resolving\n      issues.\n    ",
+        "type": "shortstr",
+        "assert": {
+          "check": "notnull"
+        },
+        "label": "localised reply text"
+      },
+      {
+        "name": "bit",
+        "type": "bit",
+        "label": "single bit"
+      },
+      {
+        "name": "octet",
+        "type": "octet",
+        "label": "single octet"
+      },
+      {
+        "name": "short",
+        "type": "short",
+        "label": "16-bit integer"
+      },
+      {
+        "name": "long",
+        "type": "long",
+        "label": "32-bit integer"
+      },
+      {
+        "name": "longlong",
+        "type": "longlong",
+        "label": "64-bit integer"
+      },
+      {
+        "name": "shortstr",
+        "type": "shortstr",
+        "label": "short string"
+      },
+      {
+        "name": "longstr",
+        "type": "longstr",
+        "label": "long string"
+      },
+      {
+        "name": "timestamp",
+        "type": "timestamp",
+        "label": "64-bit timestamp"
+      },
+      {
+        "name": "table",
+        "type": "table",
+        "label": "field table"
+      }
+    ],
+    "revision": "1",
+    "port": "5672",
+    "major": "0",
+    "comment": "AMQ Protocol version 0-9-1",
+    "minor": "9"
+  }
+}
