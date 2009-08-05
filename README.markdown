@@ -2,8 +2,8 @@
 
 * amqp-js brings low-latency message queuing to javascript, without using HTTP.
 * amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-* Example: http://amqp.peermessaging.com (open in 2 windows)
-* Google Group: http://groups.google.com/group/amqp-js or amqp-js@googlegroups.com
+* [Running Example](http://amqp.peermessaging.com) (open in 2 windows)
+* [Google Group Page](http://groups.google.com/group/amqp-js) or amqp-js@googlegroups.com
 
 ##Javascript
 In order to send and receive messages from an AMQP broker with javascript,

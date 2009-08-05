@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+	<title>AMQP JS - Advanced Message Queue Protocol Javascript Client Implementaiton - Stocks</title>
+	<script src="../javascripts/amqp.js" type="text/javascript"></script>
+	<script src="../javascripts/swfobject.js" type="text/javascript"></script>
+	<script src="./javascripts/mootools.js" type="text/javascript"></script>
+	<script src="./javascripts/snake.js" type="text/javascript"></script>
+	
+	<style>
+		div.part {
+			background-color: #ffffff;
+			position: absolute;
+		}
+	</style>
+	<script type="text/javascript">
+	
+		var game;
+		var queue;
+
+		AMQPClient.initialize({
+			connection: {
+				host: "amqp.peermessaging.com"
+			},
+			logLevel	: 3,
+			//logger		: console,
+			swfPath		: "../swfs/0.8/AMQPFlash.swf",
+			expressPath	: "../swfs/expressInstall.swf"
+		});
+	
+		AMQPClient.addListener("ready", function() {
+
+			queue = new MessageQueue({});
+
+			queue.addListener("declared", function(queue) {
+				game = new SnakeGame({
+					canvas	: $('snakegame'),
+					name	: queue.declare.queue,
+					exchange: new Exchange({
+						declare: {
+							exchange: "snake",
+							type	: "fanout"
+						}
+					})
+				});
+				
+				queue.callback = game.onMessage.bind(game);
+				queue.bind(game.exchange, "");
+			}, this);
+		});
+	</script>
+
+</head>
+<body>
+
+<div id="amqp-wrap" style="position:absolute;z-index:10000;left:10;top: 10;">
+	<div id="AMQPProxy"></div>
+</div>
+
+<div id="snakegame" style="width:800px;height:400px;background:#444;position:relative;">
+</div>
+
+</body>
+
+</html>

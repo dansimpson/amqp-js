@@ -142,10 +142,10 @@ package org.ds.velveteen
 		
 		private function onQueueDeclare(e:MethodEvent):void {
 			
-			state = DECLARED;
-			
 			var declare:QueueDeclareOk = e.instance as QueueDeclareOk;
 			queue = declare.queue;
+			
+			state = DECLARED;
 			
 			var consume:BasicConsume = new BasicConsume();
             consume.queue 		= queue;

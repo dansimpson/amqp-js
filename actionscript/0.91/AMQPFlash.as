@@ -31,6 +31,7 @@ package {
 	
 	import org.ds.amqp.connection.Connection;
 	import org.ds.amqp.protocol.Method;
+	import org.ds.amqp.protocol.queue.QueueBindOk;
 	import org.ds.fsm.StateEvent;
 	import org.ds.logging.LogEvent;
 	import org.ds.logging.Logger;
@@ -72,7 +73,7 @@ package {
 			ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
 
 			//by default we enable logging
-			ExternalInterface.call("Velveteen.onApiReady");
+			ExternalInterface.call("AMQPClient.onApiReady");
 		}
 				
 		/**
@@ -163,31 +164,37 @@ package {
 		 * Events to send to the client
 		 */		 
 		 private function onConnect(e:Event):void {
-		 	ExternalInterface.call("Velveteen.onConnect");
-		 	ExternalInterface.call("Velveteen.onReady");
+		 	ExternalInterface.call("AMQPClient.onConnect");
+		 	ExternalInterface.call("AMQPClient.onReady");
 		 }
 
 		 private function onDisconnect(e:Event):void {
-		 	ExternalInterface.call("Velveteen.onDisconnect");
+		 	ExternalInterface.call("AMQPClient.onDisconnect");
 		 }
 		 		 
 		 private function onLogEntry(e:LogEvent):void {
-		 	ExternalInterface.call("Velveteen.onLogEntry", e.toString());
+		 	ExternalInterface.call("AMQPClient.onLogEntry", e.toString());
 		 }
 		 
 		 private function onQueueDeclared(e:StateEvent):void {
 		 	var queue:Queue = e.target as Queue;
 		 	queues[queue.name] = queue;
-		 	ExternalInterface.call("Velveteen.onQueueDeclare", queue.name);
+		 	ExternalInterface.call("AMQPClient.onQueueDeclare", queue.name);
+		 }
+		 
+		 private function onBind(e:Event):void {
+		 	var queue:Queue = e.target as Queue;
+		 	queues[queue.name] = queue;
+		 	ExternalInterface.call("AMQPClient.onBind", queue.name);
 		 }
 		 
 		private function onExchangeDeclared(e:StateEvent):void {
 		 	var ex:Exchange = e.target as Exchange;
-		 	ExternalInterface.call("Velveteen.onExchangeDeclare", ex.exchangeName);
+		 	ExternalInterface.call("AMQPClient.onExchangeDeclare", ex.exchangeName);
 		 }
 		 
 		 private function onDeliver(m:*):void {
-		 	ExternalInterface.call("Velveteen.onReceive", m);
+		 	ExternalInterface.call("AMQPClient.onReceive", m);
 		 }	
 	}
 }

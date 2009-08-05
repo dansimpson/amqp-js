@@ -69,7 +69,7 @@ Ext.onReady(function() {
 		},
 		logLevel: 2,
 		//logger: console,
-		swfPath		: "../swfs/AMQPFlash.swf",
+		swfPath		: "../swfs/0.8/AMQPFlash.swf",
 		expressPath	: "../swfs/expressInstall.swf"
 	});
 	

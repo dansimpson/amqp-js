@@ -80,7 +80,6 @@ MessageQueue.prototype = {
 	routes		: {},
 	callback	: null,
 
-	
 	//bind an exchange to this queue with the routing key "routingKey"
 	bind: function(exchange, routingKey, callback) {
 		this.route(exchange.declare.exchange, routingKey, callback);
@@ -190,7 +189,7 @@ var AMQPClient = {
 		for(var k in opts) {
 			this[k] = opts[k];
 		}
-		
+
 		//embed the swf
 		swfobject.embedSWF(
 			this.swfPath,
@@ -203,7 +202,7 @@ var AMQPClient = {
 			{
 				allowScriptAccess: 'always',
 				wmode: 'opaque',
-				bgcolor: '#ffffff'
+				bgcolor: '#ff0000'
 			},
 			{}
 		);
