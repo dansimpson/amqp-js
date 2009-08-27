@@ -200,7 +200,7 @@ var AMQPClient = {
 			this.expressPath,
 			{},
 			{
-				allowScriptAccess: 'always',
+				allowScriptAccess: "always",
 				wmode: 'opaque',
 				bgcolor: '#ff0000'
 			},
@@ -270,13 +270,13 @@ var AMQPClient = {
 	},
 	
 	onQueueDeclare: function(queue) {
-		this.fireEvent("queueDeclared", this.queues[0]);
 		this.queues[0].onDeclare(queue);
+		this.fireEvent("queueDeclared", this.queues[0]);
 	},
 	
 	onExchangeDeclare: function(exchange) {
-		this.fireEvent("exchangeDeclared", this.exchanges[exchange]);
 		this.exchanges[exchange].onDeclare(exchange);
+		this.fireEvent("exchangeDeclared", this.exchanges[exchange]);
 	},
 	
 	onReceive: function(data) {

@@ -30,7 +30,7 @@
 		},
 		logLevel    : 1,
 		logger		: console,
-		swfPath		: "../swfs/0.8/AMQPFlash.swf"
+		swfPath		: "../swfs/amqp.swf"
 	});
 
 
@@ -57,6 +57,7 @@
 		//and the javascript callback is called
 		myQueue.addListener("declared", function(queue) {
 			queue.bind(myExchange, "keyTest", exchangeCallback);
+			alert('yy');
 		}, this);
 	});
 	</script>

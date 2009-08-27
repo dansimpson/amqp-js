@@ -31,9 +31,12 @@ Ext.Application = Ext.extend(Ext.Viewport, {
 			
 			items: [{
 				items: [{
-					xtype: 'panel',
-					title: 'Group Music - Disabled'
-					
+					xtype: 'snakePanel',
+					title: 'Snakes!',
+					bbar: [{
+						xtype: "label",
+						text: "Click Whitespace to Spawn.  Use arrow keys to turn.  Edges are death!"
+					}]
 				},{
 					xtype: 'interactiveGridPanel',
 					title: 'Increment Updates'
@@ -65,7 +68,8 @@ Ext.onReady(function() {
 	
 	AMQPClient.initialize({
 		connection: {
-			host: "amqp.peermessaging.com"
+			//host: "amqp.peermessaging.com"
+			host: "traxx.klatunetworks.com"
 		},
 		logLevel: 2,
 		//logger: console,

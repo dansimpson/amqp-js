@@ -29,14 +29,13 @@ var SnakeGame = new Class({
 	snake	: null,
 	name	: null,
 	snakes	: [],
-	fps		: 12,
+	fps		: 24,
 
 	initialize: function(opts) {
 		$extend(this, opts);
 		
-		window.addEvent("keypress", this.onKeyPress.bind(this));
+		$(document).addEvent("keydown", this.onKeyPress.bind(this));
 		this.canvas.addEvent("click", this.spawn.bind(this));
-		
 		
 		this.start();
 	},
@@ -55,7 +54,8 @@ var SnakeGame = new Class({
 				name: this.name,
 				game: this
 			});
-			this.snake.notify(this.snake.serialize());
+			this.snake.render();
+			this.snake.announce();
 		}
 	},
 	
@@ -63,6 +63,12 @@ var SnakeGame = new Class({
 		return this.snakes.find(function(s) {
 			return s.name == name;
 		});
+	},
+	
+	deleteSnake: function(name) {
+		this.snakes.erase(this.snakes.find(function(s) {
+			return s.name == name;
+		}));
 	},
 	
 	spawnOther: function() {
@@ -77,7 +83,7 @@ var SnakeGame = new Class({
 			
 			var head = this.snake.getHead();
 			if(!this.inBounds(head.x,head.y)) {
-				this.snake.die();
+				this.snake.die(true);
 				this.snake = null;
 			}
 		}
@@ -106,18 +112,38 @@ var SnakeGame = new Class({
 		if(this.snake && m.data.src == this.snake.name) {
 			return;
 		}
-	
-		var snake = this.findSnake(m.data.src);
-		if(!snake) {
-			snake = new Snake({
-				game: this
-			});
-			snake.update(m.data.data);
-			this.snakes.push(snake);
-		} else {
-			snake.update(m.data.data);
-		}
 		
+		var snake = this.findSnake(m.data.src);
+
+		switch(m.data.cmd) {
+			case "announce":
+				if(!snake) {
+					snake = new Snake({
+						game: this
+					});
+					
+					this.snakes.push(snake);
+					snake.update(m.data.data);
+					
+					if(this.snake) {
+						this.snake.announce();
+					}
+				}
+				break;
+			case "turn":
+				if(snake) {
+					snake.update(m.data.data);
+				}
+				break;
+			case "die":
+				if(snake) {
+					snake.die();
+					this.deleteSnake(snake.name);
+				}
+				break;
+			default:
+				break;
+		}
 	}
 
 });
@@ -135,7 +161,7 @@ var Snake = new Class({
 	growth	: 16,
 
 	initialize: function(opts) {
-		$extend(this, opts);
+		$extend(this,opts)
 	},
 	
 	getHead: function() {
@@ -155,9 +181,9 @@ var Snake = new Class({
 	},
 	
 	turn: function(dir) {
-		if(dir.x != -this.dir.x && dir.y != -this.dir.y) {
+		if((dir.x != 0 && this.dir.x == 0) || (dir.y != 0 && this.dir.y == 0)) {
 			this.dir = dir;
-			this.notify({
+			this.notify("turn", {
 				dir: this.dir
 			});
 		}
@@ -198,11 +224,18 @@ var Snake = new Class({
 		return this.parts.length;
 	},
 	
-	die: function() {
+	die: function(notify) {
 		this.growth = 0;
 		while(this.size() > 0) {
 			this.removePart(this.parts.pop());
 		}
+		if(notify) {
+			this.notify("die", {});
+		}
+	},
+	
+	announce: function() {
+		this.notify("announce", this.serialize());
 	},
 	
 	serialize: function() {
@@ -219,8 +252,8 @@ var Snake = new Class({
 		};
 	},
 	
-	notify: function(data) {
-		this.game.exchange.publish("", {src: this.name, data: data});
+	notify: function(cmd, data) {
+		this.game.exchange.publish("snake", {src: this.name, cmd: cmd, data: data});
 	},
 	
 	update: function(data) {
@@ -244,6 +277,7 @@ var Snake = new Class({
 
 var SnakePart = new Class({
 
+	
 	element	: null,
 	snake	: null,
 	x		: 0,

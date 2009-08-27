@@ -32,30 +32,30 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 					text: "Clear Log",
 					scope: this,
 					handler: this.clear
-				},'->',{
+				},"->",{
 					xtype: "label",
-					text: "Log Level (1 = debug, 2 = info, 3 = critical)"
-				},'-',{
-					xtype: "numberfield",
-					minValue: 1,
-					maxValue: 3,
-					value: AMQPClient.logLevel,
-					id: "level",
-					width: 20,
-					enableKeyEvents: true,
-					listeners: {
-						scope: this,
-						keyup: function(f,e) {
-							if(e.getKey() == e.ENTER) {
-								this.update();
-							}
-						}
+					text: "Log Level: "
+				},{
+					xtype: 'button',
+					text: "Debug",
+					scope: this,
+					handler: function() {
+						this.update(1);
 					}
 				},{
 					xtype: 'button',
-					text: "Set",
+					text: "Info",
 					scope: this,
-					handler: this.update
+					handler: function() {
+						this.update(2);
+					}
+				},{
+					xtype: 'button',
+					text: "Critical",
+					scope: this,
+					handler: function() {
+						this.update(3);
+					}
 				}]
 			}
 		});
@@ -87,10 +87,8 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 		this.store.loadData(this.data);
 	},
 	
-	update: function(){
-		if(this.getBottomToolbar().get("level").isValid()) {
-			AMQPClient.setLogLevel(this.getLevel());
-		}
+	update: function(level){
+		AMQPClient.setLogLevel(level);
 	},
 	
 	getLevel: function() {
