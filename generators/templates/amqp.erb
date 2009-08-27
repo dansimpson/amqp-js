@@ -32,23 +32,24 @@ package org.ds.amqp
 	import org.ds.amqp.protocol.Header;
 	import org.ds.amqp.protocol.Method;
 	import org.ds.amqp.protocol.headers.*;
-	<% s['classes'].each do |c| -%>
+	<% s['class'].each do |c| -%>
 	import org.ds.amqp.protocol.<%=c['name'].downcase.gsub(/\s/,'') %>.*;<% end -%>
 	
 	public class AMQP
 	{
-		<%- s['constants'].each do |c| -%>
-		public static var <%= c['name'].gsub(/-/,'_').ljust(24) %>:int = <%= c['value'] %>;<%- end -%>
-		public static var <%= "PROTOCOL_MAJOR".ljust(24) %>:int = <%= s['major-version'] %>;
-		public static var <%= "PROTOCOL_MINOR".ljust(24) %>:int = <%= s['minor-version'] %>;
+		<%- s['constant'].each do |c| -%>
+		public static var <%= c['name'].gsub(/-/,'_').upcase.ljust(24) %>:int = <%= c['value'] %>;<%- end -%>
+		public static var <%= "PROTOCOL_MAJOR".ljust(24) %>:int = <%= s['major'] %>;
+		public static var <%= "PROTOCOL_MINOR".ljust(24) %>:int = <%= s['minor'] %>;
+		public static var <%= "COMMENT".ljust(24) %>:String = "<%= s['comment'] %>";
 		public static var <%= "PORT".ljust(24) %>:int = <%= s['port'] %>;
 		
 		private static var classMap		:Dictionary = new Dictionary();
 		private static var methodMap	:Dictionary = new Dictionary();
-		<% s['classes'].each do |c| -%>
-		classMap[<%=c['id']%>]		= <%=c['name'].camelize.gsub(/\s/,'') %>;
-		methodMap[<%=c['id']%>] 	= new Dictionary();<% c['methods'].each do |m| -%>
-		methodMap[<%=c['id']%>][<%=m['id']%>]	= <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %>;<% end -%>
+		<% s['class'].each do |c| -%>
+		classMap[<%=c['index']%>]		= <%=c['name'].camelize.gsub(/\s/,'') %>;
+		methodMap[<%=c['index']%>] 		= new Dictionary();<% c['method'].each do |m| -%>
+		methodMap[<%=c['index']%>][<%=m['index']%>]	= <%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %>;<% end -%>
 		<% end -%>
 
 		public static function getClass(id:int):Header {
