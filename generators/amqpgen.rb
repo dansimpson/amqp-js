@@ -6,7 +6,7 @@ require 'json'
 require 'ftools'
 
 OUTPUT_ROOT = File.dirname(__FILE__) + "/as3/org/ds/amqp"
-s = JSON.parse(File.read(File.dirname(__FILE__) + "/amqp0-8.json"))['amqp']
+s = JSON.parse(File.read(File.dirname(__FILE__) + "/amqp0-8.json"))
 
 TYPE_MAP = {
 	'bit' 		=> {

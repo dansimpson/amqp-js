@@ -38,7 +38,7 @@ package org.ds.amqp
 	public class AMQP
 	{
 		<%- s['constant'].each do |c| -%>
-		public static var <%= c['name'].gsub(/-/,'_').upcase.ljust(24) %>:int = <%= c['value'] %>;<%- end -%>
+		public static var <%= c['name'].gsub(/[-|\s]/,'_').upcase.ljust(24) %>:int = <%= c['value'] %>;<%- end -%>
 		public static var <%= "PROTOCOL_MAJOR".ljust(24) %>:int = <%= s['major'] %>;
 		public static var <%= "PROTOCOL_MINOR".ljust(24) %>:int = <%= s['minor'] %>;
 		public static var <%= "COMMENT".ljust(24) %>:String = "<%= s['comment'] %>";

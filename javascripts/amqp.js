@@ -181,8 +181,8 @@ var AMQPClient = {
 	connected	: false,
 	queues		: [],
 	exchanges	: {},
-	swfPath		: "../swfs/AMQPFlash.swf",
-	expressPath	: "../swfs/expressInstall.swf",
+	swfPath		: "../swfs/amqp.swf",
+	expressPath	: "../amqp/swfs/expressInstall.swf",
 	id			: "AMQPProxy",
 	
 	initialize: function(opts) {

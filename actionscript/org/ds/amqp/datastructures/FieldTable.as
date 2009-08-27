@@ -183,13 +183,14 @@ package org.ds.amqp.datastructures
 			return "";
 			//var ba:ByteArray = toByteArray();
 			//return ba.readUTFBytes(ba.length);
-		}
+		}*/
 		
 		public function toByteArray():ByteArray {
 			var buf:Buffer = new Buffer();
 			write(buf);
+			buf.position = 0;
 			return buf;
-		}*/
+		}
 		
 
 	}

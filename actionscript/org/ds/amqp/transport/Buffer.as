@@ -29,7 +29,6 @@ package org.ds.amqp.transport
 	import flash.utils.ByteArray;
 	
 	import org.ds.amqp.datastructures.FieldTable;
-	import org.ds.amqp.datastructures.Long;
 	
 	public class Buffer extends ByteArray
 	{
@@ -219,20 +218,21 @@ package org.ds.amqp.transport
 		}			
 		
 		//do something with String here
-		public function readLongLong():Long {
+		public function readLongLong():uint {
 			if(!shouldRead()) {
 				return null;
 			}
 			clearBits();
-			return new Long(readUnsignedInt(),readUnsignedInt());
+			readUnsignedInt()
+			return readUnsignedInt();
 		}
 		
 		//do something with String here....
-		public function writeLongLong(data:Long):void {
+		public function writeLongLong(data:uint):void {
 			writeBits();
 			if(shouldWrite(data)) {
-				writeUnsignedInt(data.upper);
-				writeUnsignedInt(data.lower);
+				writeUnsignedInt(0);
+				writeUnsignedInt(data);
 			}
 		}
 		
@@ -269,19 +269,23 @@ package org.ds.amqp.transport
 			}
 		}
 
-		public function readLongString():String {		
+		public function readLongString():ByteArray {		
 			if(!shouldRead()) {
 				return null;
 			}
 			clearBits();
-			return readUTFBytes(readUnsignedInt());
+			
+			var bytes:ByteArray = new ByteArray();
+			readBytes(bytes, 0, readUnsignedInt());
+			bytes.position = 0;
+			return bytes;
 		}
 		
-		public function writeLongString(data:String):void {
+		public function writeLongString(data:ByteArray):void {
 			writeBits();
 			if(shouldWrite(data)) {
 				writeUnsignedInt(data.length);
-				writeUTFBytes(data);
+				writeBytes(data, 0, data.length);
 			}
 		}
 		

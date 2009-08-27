@@ -21,7 +21,7 @@ package org.ds.amqp.connection
 		}
 		
 		protected function get channel():uint {
-			return channels.count > 0 ? channels.current : 0; //Math.round(Math.random() * channels);
+			return channels.count > 0 ? channels.current : 0;
 		}
 		
 		public function openChannels(count:int):void {

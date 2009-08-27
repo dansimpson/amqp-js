@@ -52,8 +52,8 @@ package org.ds.amqp.protocol
 			if(obj is String) {
 				msg += obj + "\n";
 			} else {
-				for(var k:* in obj) {
-					msg += k + " = " + obj[k] + ";\n";
+				for(var i:int = 0;i < obj.length;i++) {
+					msg += obj[i] + " = " + this[obj[i]] + ";\n";
 				}
 			}
 			msg += "---- End " + name + " ----\n";

@@ -32,9 +32,11 @@ package org.ds.amqp.protocol
 	public class Method extends Payload
 	{
 		
-		protected var _classId	:int = -1;
-		protected var _methodId	:int = -1;
-		protected var _content	:Boolean = false;
+		protected var _classId		:int 		= -1;
+		protected var _methodId		:int 		= -1;
+		protected var _content		:Boolean 	= false;
+		protected var _synchronous	:Boolean 	= false;
+		protected var _responses	:Array		= [];
 		
 		public function Method() {
 			_type = AMQP.FRAME_METHOD;

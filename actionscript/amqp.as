@@ -38,7 +38,7 @@ package {
 	import org.ds.velveteen.Queue;
 
 
-	public class AMQPFlash extends Sprite
+	public class amqp extends Sprite
 	{
 		private var logger		:Logger 	= new Logger(1);
 		private var connection	:Connection	= null;
@@ -50,7 +50,7 @@ package {
 		private var exchanges	:* = {};
 		
 		
-		public function AMQPFlash()
+		public function amqp()
 		{
 			initAPI();
 		}
@@ -60,6 +60,7 @@ package {
 		 * External Interface API
 		 */ 
 		private function initAPI():void {
+			
 			ExternalInterface.addCallback("configure", 		api_configure);
 			ExternalInterface.addCallback("connect", 		api_connect);
 			ExternalInterface.addCallback("disconnect", 	api_disconnect);

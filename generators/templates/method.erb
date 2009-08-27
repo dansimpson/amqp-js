@@ -51,7 +51,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 		public static var EVENT:String = "<%=c['index']%>/<%=m['index']%>";
 		<%- m['field'].each do |a| continue unless a -%>
 		//<%=a['label']%>
-		public var <%= a['name'].gsub(/-|\s/,'_').camelize(:lower).ljust(24) %>:<%= get_type(convert_type(a,s)) %> = <%= get_default(convert_type(a,s)) %>;
+		public var <%= a['name'].gsub(/[-|\s]/,'_').camelize(:lower).ljust(24) %>:<%= get_type(convert_type(a,s)) %> = <%= get_default(convert_type(a,s)) %>;
 		<%- end if m['field'] -%>
 		
 		public function <%= class_name(c,m) %>() {
@@ -67,7 +67,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 		<%- if m['field'] -%>
 		public override function writeArguments(buf:Buffer):void {
 			<%- m['field'].each do |a| -%>
-			buf.write<%= get_method(convert_type(a,s)) %>(this.<%= a['name'].gsub(/-|\s/,'_').camelize(:lower) %>);<% end %>
+			buf.write<%= get_method(convert_type(a,s)) %>(this.<%= a['name'].gsub(/[-|\s]/,'_').camelize(:lower) %>);<% end %>
 		}
 		
 		public override function readArguments(buf:Buffer):void {
@@ -77,7 +77,7 @@ package org.ds.amqp.protocol.<%=c['name'].downcase %>
 		
 		public override function print():void {
 			var props:Array = [
-				<%= m['field'].collect { |a| "\"#{a['name'].gsub(/-|\s/,'_').camelize(:lower)}\"" }.join(',') -%>
+				<%= m['field'].collect { |a| "\"#{a['name'].gsub(/[-|\s]/,'_').camelize(:lower)}\"" }.join(',') -%>
 			];
 			printObj("<%=c['name'].camelize.gsub(/\s/,'') %><%=m['name'].titleize.gsub(/\s/,'') %>", props);
 		}

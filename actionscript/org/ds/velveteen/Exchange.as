@@ -83,8 +83,8 @@ package org.ds.velveteen
 		
 		
 		public function onDelete(e:MethodEvent):void {
-			state = DELETED;
 			conn.removeEventListener(ExchangeDeleteOk.EVENT, onDelete);
+			state = DELETED;
 		}
 		
 		

@@ -43,21 +43,26 @@
 			callback: directCallback
 		});
 
-		//Declare an exchange for publishing messages
-		//and binding
-		myExchange = new Exchange({
-			declare: {
-				exchange: "ubertopic",
-				type: "topic"
-			}
-		});
+
+
 
 		//when the queue is declared, bind the exchange to it, so that
 		//messages published to the exchange are delivered to the queue
 		//and the javascript callback is called
 		myQueue.addListener("declared", function(queue) {
+		
+			console.log("DEC");
+			//Declare an exchange for publishing messages
+			//and binding
+			myExchange = new Exchange({
+				declare: {
+					exchange: "ubertopic",
+					type	: "topic"
+				}
+			});
+			
 			queue.bind(myExchange, "keyTest", exchangeCallback);
-			alert('yy');
+			
 		}, this);
 	});
 	</script>

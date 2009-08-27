@@ -70,10 +70,9 @@ package org.ds.amqp.connection
 		};
 		
 		//transport and a buffer
-		private var stream		:Stream		= null;	
-		private var queue		:Array		= new Array();
-		
-		private var incoming	:Transmission = null;
+		private var stream		:Stream			= null;	
+		private var queue		:Array			= new Array();
+		private var incoming	:Transmission 	= null;
 		
 		public function Connection(authenticationSettings:*, autoConnect:Boolean=true)
 		{
@@ -98,7 +97,7 @@ package org.ds.amqp.connection
 			defineTransition("*", CLOSED, disconnected);
 			defineTransition("*", READY, ready);
 			
-			//new ConnectionClose
+			//methods the connection cares about
 			addEventListener(ConnectionStart.EVENT		, onConnectionStart);
 			addEventListener(ConnectionTune.EVENT		, onConnectionTune);
 			addEventListener(ConnectionCloseOk.EVENT	, onConnectionCloseOk);
@@ -119,7 +118,7 @@ package org.ds.amqp.connection
 		}
 
 		protected function negotiating():void {
-			Logger.info("Connected");
+			Logger.info("Socket Connected");
 			stream.writeUTFBytes("AMQP");
 			stream.writeByte(1);
 			stream.writeByte(1);
@@ -129,6 +128,7 @@ package org.ds.amqp.connection
 		}
 				
 		protected function connected():void {
+			Logger.info("Connected");
 		}
 
 		protected function disconnected():void {
@@ -315,7 +315,7 @@ package org.ds.amqp.connection
 			credentials.store("LOGIN", 	"guest");
 			credentials.store("PASSWORD", 	"guest");	
 				
-			startOk.response	= credentials;
+			startOk.response	= credentials; //.toByteArray();
 			startOk.locale    	= "en_US";
 			startOk.mechanism 	= "AMQPLAIN";
 

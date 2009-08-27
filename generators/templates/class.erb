@@ -43,7 +43,7 @@ package org.ds.amqp.protocol.headers
 	{
 		<%- c['field'].each do |a| -%>
 		//<%=a['label']%>
-		public var <%= a['name'].gsub(/-/,'_').camelize(:lower).ljust(24) %>:<%= get_type(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>;
+		public var <%= a['name'].gsub(/[-|\s]/,'_').camelize(:lower).ljust(24) %>:<%= get_type(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>;
 		<%- end if c['field'] -%>
 
 		public function <%=c['name'].titlecase.gsub(/\s/,'') %>() {
@@ -52,12 +52,12 @@ package org.ds.amqp.protocol.headers
 
 		public override function writeProperties(buf:Buffer):void {
 			<%- c['field'].each do |a| -%>
-			buf.write<%= get_method(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>(this.<%= a['name'].gsub(/-/,'_').camelize(:lower) %>);<% end if c['field'] %>
+			buf.write<%= get_method(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>(this.<%= a['name'].gsub(/[-|\s]/,'_').camelize(:lower) %>);<% end if c['field'] %>
 		}
 
 		public override function readProperties(buf:Buffer):void {
 			<%- c['field'].each do |a| -%>
-			this.<%= a['name'].gsub(/-/,'_').camelize(:lower).ljust(16) %> = buf.read<%= get_method(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>();<% end if c['field'] %>
+			this.<%= a['name'].gsub(/[-|\s]/,'_').camelize(:lower).ljust(16) %> = buf.read<%= get_method(a['domain'] ? s['domain'].find{ |k| k['name'] == a['domain']}['type'] : a['type']) %>();<% end if c['field'] %>
 		}
 		
 		public override function print():void {

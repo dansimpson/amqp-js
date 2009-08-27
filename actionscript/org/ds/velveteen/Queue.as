@@ -144,9 +144,7 @@ package org.ds.velveteen
 			
 			var declare:QueueDeclareOk = e.instance as QueueDeclareOk;
 			queue = declare.queue;
-			
-			state = DECLARED;
-			
+
 			var consume:BasicConsume = new BasicConsume();
             consume.queue 		= queue;
             consume.consumerTag = queue;
@@ -155,15 +153,18 @@ package org.ds.velveteen
 			conn.sendFrame(new Frame(consume));
 			conn.addEventListener(BasicConsumeOk.EVENT, onSubscribed);
 			conn.removeEventListener(QueueDeclareOk.EVENT, onQueueDeclare);
+			
+			state = DECLARED;
 		}		
 		
 		
 		
 		private function onSubscribed(e:MethodEvent):void {
-			state = SUBSCRIBED;
 			conn.addEventListener(BasicDeliver.EVENT, onReceive);
 			conn.removeEventListener(BasicConsumeOk.EVENT, onSubscribed);
 			flushBinds();
+			
+			state = SUBSCRIBED;
 		}		
 		
 		

@@ -68,12 +68,11 @@ Ext.onReady(function() {
 	
 	AMQPClient.initialize({
 		connection: {
-			//host: "amqp.peermessaging.com"
-			host: "traxx.klatunetworks.com"
+			host: "amqp.peermessaging.com"
 		},
 		logLevel: 2,
 		//logger: console,
-		swfPath		: "../swfs/0.8/AMQPFlash.swf",
+		swfPath		: "../swfs/amqp.swf",
 		expressPath	: "../swfs/expressInstall.swf"
 	});
 	
