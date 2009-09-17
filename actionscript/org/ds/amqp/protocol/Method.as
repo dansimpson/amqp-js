@@ -36,7 +36,11 @@ package org.ds.amqp.protocol
 		protected var _methodId		:int 		= -1;
 		protected var _content		:Boolean 	= false;
 		protected var _synchronous	:Boolean 	= false;
-		protected var _responses	:Array		= [];
+		protected var _responses	:Array		= null;
+		
+		
+		protected var _header		:Header;
+		protected var _body			:Body;
 		
 		public function Method() {
 			_type = AMQP.FRAME_METHOD;
@@ -68,8 +72,40 @@ package org.ds.amqp.protocol
 			 return _classId + "/" + _methodId;
 		}
 		
+		public function get isSynchronous():Boolean {
+			return _synchronous;	
+		}
+		
+		public function get isResponse():Boolean {
+			return isSynchronous && !expectsResponse;
+		}
+		
+		public function get expectsResponse():Boolean {
+			return _responses != null;	
+		}
+		
 		public function get hasContent():Boolean {
 			return _content;
+		}
+		
+		public function get header():Header {
+			return _header;
+		}
+		
+		public function set header(header:Header):void {
+			_header = header;
+		}
+		
+		public function get body():Body {
+			return _body;
+		}
+		
+		public function set body(body:Body):void {
+			_body = body;
+		}
+		
+		public function get responses():Array {
+			return _responses;
 		}
 	}
 }

@@ -26,43 +26,40 @@ THE SOFTWARE.
 
 package org.ds.velveteen
 {
-	import flash.events.Event;
-	
+	import org.ds.amqp.connection.Channel;
 	import org.ds.amqp.connection.Connection;
 	import org.ds.amqp.events.MethodEvent;
-	import org.ds.amqp.events.TransmissionEvent;
 	import org.ds.amqp.protocol.basic.BasicConsume;
 	import org.ds.amqp.protocol.basic.BasicConsumeOk;
 	import org.ds.amqp.protocol.basic.BasicDeliver;
 	import org.ds.amqp.protocol.queue.QueueBind;
 	import org.ds.amqp.protocol.queue.QueueDeclare;
 	import org.ds.amqp.protocol.queue.QueueDeclareOk;
-	import org.ds.amqp.transport.Frame;
-	import org.ds.amqp.transport.Transmission;
 	import org.ds.fsm.StateMachine;
 	import org.ds.logging.Logger;
 	
 	public class Queue extends StateMachine
 	{
-		public static var DECLARED		:String = "Declared";
-		public static var SUBSCRIBED	:String = "Subscribed";
-		public static var UNSUBSCRIBED	:String = "Unsubscribed";
-		public static var DELETED		:String = "Deleted";
+		private static var count		:uint	= 0;
+		public 	static var DECLARED		:String = "Declared";
+		public 	static var SUBSCRIBED	:String = "Subscribed";
+		public 	static var UNSUBSCRIBED	:String = "Unsubscribed";
+		public 	static var DELETED		:String = "Deleted";
 		
 		
-		protected var unique		:Number;
-		protected var conn			:Connection;
+		protected var id			:uint;
+		protected var channel		:Channel;
 		protected var queue			:String;
 		protected var callback		:Function;
-		protected var pending		:Array 			= [];
-		protected var bindings		:* 				= {};
+		protected var pendingBinds	:Array = [];
 
 		public function Queue(connection:Connection, options:*=null, cb:Function=null)
 		{
 			super("Null");
 			
-			conn = connection;
-			callback = cb;
+			id			= ++count;
+			channel 	= connection.createChannel();
+			callback 	= cb;
 			
 			var declare:QueueDeclare = new QueueDeclare();
 			if(options) {
@@ -71,13 +68,13 @@ package org.ds.velveteen
 				}
 			}
 			
-			conn.addEventListener(QueueDeclareOk.EVENT, onQueueDeclare);
-			conn.sendFrame(new Frame(declare));
+			//declare and then subscribe
+			channel.send(declare, onQueueDeclare);
 		}
 
 
-		public function get isSubscribed():Boolean {
-			return state == SUBSCRIBED;
+		public function get isReady():Boolean {
+			return state == DECLARED || state == SUBSCRIBED; 
 		}
 		
 		public function unsubscribe():void {
@@ -88,30 +85,36 @@ package org.ds.velveteen
 		
 		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null):void {
 
-			var config:* = {
-				exchange: exchange,
-				routingKey: routingKey,
-				callback: callback
+			/*var config:* = {
+				exchange	: exchange,
+				routingKey	: routingKey,
+				callback	: callback
 			};
 			
 			if(!isSubscribed) {
 				pending.push(config);
 				return;
-			}
+			}*/
 			
-			if(!exchange.isDeclared) {
+			/*if(!exchange.isDeclared) {
 				pending.push(config);
 				exchange.addEventListener(Exchange.DECLARED, onExchangeDeclare);
 				return;
-			}
+			}*/
 
 			var bind:QueueBind = new QueueBind();
 			bind.exchange 	= exchange.exchangeName;
 			bind.queue 		= queue;
 			bind.routingKey = routingKey;
 			
+			if(isReady) {
+				channel.send(bind);	
+			} else {
+				pendingBinds.push(bind);
+			}
+			
 			//create the exchange binding
-			if(!bindings[exchange.exchangeName]) {
+			/*if(!bindings[exchange.exchangeName]) {
 				bindings[exchange.exchangeName] = {
 					routes: {}
 				}
@@ -122,9 +125,7 @@ package org.ds.velveteen
 				bindings[exchange.exchangeName][routingKey] = {
 					callback: callback
 				}
-			}
-
-			conn.sendFrame(new Frame(bind));
+			}*/
 		}
 		
 		
@@ -132,75 +133,70 @@ package org.ds.velveteen
 			return this;
 		}
 					
+					
 		/*
-		* Event Handlers
+		* Callbacks
 		*/
-		
-		private function onExchangeDeclare(e:MethodEvent):void {
-			flushBinds();
-		}
-		
-		private function onQueueDeclare(e:MethodEvent):void {
+		private function onQueueDeclare(result:QueueDeclareOk):void {
 			
-			var declare:QueueDeclareOk = e.instance as QueueDeclareOk;
-			queue = declare.queue;
+			queue = result.queue;
 
 			var consume:BasicConsume = new BasicConsume();
             consume.queue 		= queue;
             consume.consumerTag = queue;
             consume.noAck 		= true;
             
-			conn.sendFrame(new Frame(consume));
-			conn.addEventListener(BasicConsumeOk.EVENT, onSubscribed);
-			conn.removeEventListener(QueueDeclareOk.EVENT, onQueueDeclare);
-			
-			state = DECLARED;
+            channel.send(consume, onSubscribed);
+            
+            state = DECLARED;
+            
+            flushBinds();
 		}		
 		
 		
 		
-		private function onSubscribed(e:MethodEvent):void {
-			conn.addEventListener(BasicDeliver.EVENT, onReceive);
-			conn.removeEventListener(BasicConsumeOk.EVENT, onSubscribed);
-			flushBinds();
-			
+		private function onSubscribed(result:BasicConsumeOk):void {
+			channel.addEventListener(BasicDeliver.EVENT, onReceive);
 			state = SUBSCRIBED;
 		}		
 		
 		
 		private function flushBinds():void {
-			pending.forEach(function(binding:*, i:int, array:Array):void {
-				if(binding.exchange.isDeclared) {
-					bind(binding.exchange, binding.routingKey, binding.callback);
-				}
-			}, this);
+			
+			var bind:QueueBind = null;
+			while(pendingBinds.length > 0) {
+				 bind = pendingBinds.shift();
+				 bind.queue = queue;
+				 
+				 channel.send(bind);
+			}
 		}
 		
-		protected function onReceive(e:Event):void {
+		protected function onReceive(e:MethodEvent):void {
 			
 			Logger.info("Message Received");
 			
-			var t:Transmission 	= (e as TransmissionEvent).instance;
-			var m:BasicDeliver 	= t.method as BasicDeliver;
-			var b:* 			= bindings[m.exchange][m.routingKey];
+			var m:BasicDeliver 	= e.instance as BasicDeliver;
 			
 			var msg:* = {
+				qid			: id,
 				queue		: m.consumerTag,
 				exchange	: m.exchange,
 				routingKey	: m.routingKey,
-				data		: t.body.data
+				data		: m.body.data
 			};
-
-			if(b != null && b.callback is Function) {			
-				b.callback(msg);
-			}
 			
-			callback(msg);
+			callback(msg)
 		}
 		
 
 		public function get name():String {
 			return queue;
+		}
+		
+				
+		public function get queueId():uint {
+			return id;
 		}
 
 	}

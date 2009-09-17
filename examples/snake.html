@@ -31,19 +31,21 @@
 	
 		AMQPClient.addListener("ready", function() {
 
+			game = new SnakeGame({
+				canvas	: $('snakegame'),
+				name	: queue.declare.queue,
+				exchange: new Exchange({
+					declare: {
+						exchange: "snake",
+						type	: "fanout"
+					}
+				})
+			});
+				
 			queue = new MessageQueue({});
 
 			queue.addListener("declared", function(queue) {
-				game = new SnakeGame({
-					canvas	: $('snakegame'),
-					name	: queue.declare.queue,
-					exchange: new Exchange({
-						declare: {
-							exchange: "snake",
-							type	: "fanout"
-						}
-					})
-				});
+
 				
 				queue.callback = game.onMessage.bind(game);
 				queue.bind(game.exchange, "");

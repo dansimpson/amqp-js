@@ -27,9 +27,11 @@ THE SOFTWARE.
 /*
 * Make a "class" act as an event dispatcher.
 */
-function eventelize(klass) {
-	klass.listeners = {};
-	klass.addListener = function(name, fn, scope) {
+var DispatchProperties = {
+	
+	listeners: {},
+	
+	addListener: function(name, fn, scope) {
 		if(!this.listeners[name]) {
 			this.listeners[name] = [];
 		}
@@ -37,8 +39,13 @@ function eventelize(klass) {
 			fn: fn,
 			scope: scope || window
 		});
-	};
-	klass.fireEvent = function() {
+	},
+	
+	on: function(name, fn, scope) {
+		this.addListener(name, fn, scope);
+	},
+	
+	fireEvent: function() {
 		var args = [].slice.call(arguments);
 		var name = args.shift();
 		var calls = this.listeners[name];
@@ -48,6 +55,14 @@ function eventelize(klass) {
 				c.fn.apply(c.scope, args);
 			}
 		}
+	}
+	
+};
+
+//used to add methods and properties to our classes
+function extend(klass, props) {
+	for(var k in props) {
+		klass[k] = props[k];
 	}
 }
 
@@ -63,11 +78,16 @@ var MessageQueue = function(opts) {
 	for(var k in opts) {
 		this[k] = opts[k];
 	}
-	AMQPClient.registerQueue(this);
+	this.id = AMQPClient.registerQueue(this);
 };
 
 MessageQueue.prototype = {
 
+	id			: null,
+	routes		: {},
+	callback	: null,
+	
+	
 	declare: {
 		queue		: "",
 		passive		: false,
@@ -77,20 +97,18 @@ MessageQueue.prototype = {
 		nowait		: false
 	},
 
-	routes		: {},
-	callback	: null,
 
 	//bind an exchange to this queue with the routing key "routingKey"
 	bind: function(exchange, routingKey, callback) {
 		this.route(exchange.declare.exchange, routingKey, callback);
-		AMQPClient.apiCall("bind", this.declare.queue, exchange.declare.exchange, routingKey);
+		AMQPClient.apiCall("bind", this.id, exchange.id, routingKey);
 	},
 	
 	//unbind an exchange, so no more messages published on that exchange
 	//with the routing key "routingKey" are delivered to this queue
 	unbind: function(exchange, routingKey) {
 		this.unroute(exchange.declare.exchange, routingKey, callback);
-		AMQPClient.apiCall("unbind", this.declare.queue, exchange.declare.exchange, routingKey);
+		AMQPClient.apiCall("unbind", this.id, exchange.id, routingKey);
 	},
 	
 	route: function(exchange, routingKey, callback) {
@@ -109,11 +127,6 @@ MessageQueue.prototype = {
 		}
 	},
 
-	onDeclare: function(queue) {
-		this.declare.queue = queue;
-		this.fireEvent('declared', this);
-	},
-	
 	onReceive: function(data) {
 		var ex = this.routes[data.exchange];
 		if(ex) {
@@ -132,7 +145,7 @@ MessageQueue.prototype = {
 		}
 	}
 };
-eventelize(MessageQueue.prototype);
+extend(MessageQueue.prototype, DispatchProperties);
 
 /**
 * The Exchange class provides a simple interface for
@@ -143,9 +156,10 @@ var Exchange = function(opts) {
 	for(var k in opts) {
 		this[k] = opts[k];
 	}
-	AMQPClient.registerExchange(this);
+	this.id = AMQPClient.registerExchange(this);
 };
 Exchange.prototype = {
+	id		: null,
 	declared: false,
 	declare	: {
 		exchange	: "amq.fanout",
@@ -154,19 +168,14 @@ Exchange.prototype = {
 	routes	: {},
 	
 	publish: function(key, message) {
-		AMQPClient.apiCall("publish", this.declare.exchange, key, message);
+		AMQPClient.apiCall("publish", this.id, key, message);
 	},
 	
 	route: function(key, callback) {
 		this.routes[key] = callback;
-	},
-	
-	onDeclare: function(ex) {
-		this.declared = true;
-		this.fireEvent('declared');
 	}
 };
-eventelize(Exchange.prototype);
+extend(Exchange.prototype, DispatchProperties);
 
 /**
 * The AMQPClient object acts a proxy between javascript and actionscript.
@@ -224,17 +233,17 @@ var AMQPClient = {
 
 	registerQueue: function(q) {
 		this.queues.push(q);
-		this.apiCall("subscribe", q.declare);
+		return this.apiCall("subscribe", q.declare);
 	},
 	
 	registerExchange: function(ex) {
-		this.apiCall("exchange", ex.declare);
 		this.exchanges[ex.declare.exchange] = ex;
+		return this.apiCall("exchange", ex.declare);
 	},
 	
 	apiCall: function() {
 		var args = [].slice.call(arguments);
-		this.instance[args.shift()].apply(this.instance, args);
+		return this.instance[args.shift()].apply(this.instance, args);
 	},
 
 	setLogLevel: function(lvl) {
@@ -269,18 +278,9 @@ var AMQPClient = {
 		}
 	},
 	
-	onQueueDeclare: function(queue) {
-		this.queues[0].onDeclare(queue);
-		this.fireEvent("queueDeclared", this.queues[0]);
-	},
-	
-	onExchangeDeclare: function(exchange) {
-		this.exchanges[exchange].onDeclare(exchange);
-		this.fireEvent("exchangeDeclared", this.exchanges[exchange]);
-	},
-	
 	onReceive: function(data) {
 		this.queues[0].onReceive(data);
 	}
 };
-eventelize(AMQPClient);
+
+extend(AMQPClient, DispatchProperties);

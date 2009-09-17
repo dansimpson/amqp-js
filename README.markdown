@@ -2,8 +2,17 @@
 
 * amqp-js brings low-latency message queuing to javascript, without using HTTP.
 * amqp-js joins forces with actionscript to establish socket connections to your AMQP server.
-* [Running Example](http://amqp.peermessaging.com) (open in 2 windows)
 * [Google Group Page](http://groups.google.com/group/amqp-js) or amqp-js@googlegroups.com
+
+##In development
+* New, more concise, high level API
+* Adaptor interface for alternative transports (WebSockets, Comet)
+* TLS Support
+* Examples
+* Documentation
+
+##Firewall Note
+This will not work for computers behind a firewall blocking outoing traffic on port 843.  See below for details.
 
 ##Javascript
 In order to send and receive messages from an AMQP broker with javascript,
@@ -61,12 +70,10 @@ Configure the AMQP client and setup a simple hello world:
 			}
 		});
 
-		//when the queue is declared, bind the exchange to it, so that
+		//bind the exchange to it, so that
 		//messages published to the exchange are delivered to the queue
 		//and the javascript callback is called
-		myQueue.addListener("declared", function(queue) {
-			queue.bind(myExchange, "keyTest", exchangeCallback);
-		}, this);
+		myQueue.bind(myExchange, "keyTest", exchangeCallback);
 	});
 	
 
@@ -90,14 +97,7 @@ http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security_04.html
 
 Your server will need to dish out flash policy files on port 843.  Check the policy-server
 directory to get access to an example flash policy file, a python script to host them,
-and an init script to daemonize the flash polciy server.  This is fully working on debian.
+and an init script to daemonize the flash policy server.  This is fully working on debian.
+Note:  the client's network must allow outgoing traffic on port 843 in order for any flash
+socket activity.
 
-##Todo
-* Provide an adaptor interface for alternative transports
-* Provide better sequence handling
-* TLS Support - Security
-* 0.91 Support and eventually 1.0
-* More Examples
-* Shrink file size (29Kb now)
-* Make it easier
-* Transactions

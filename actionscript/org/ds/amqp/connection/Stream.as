@@ -1,51 +1,30 @@
 package org.ds.amqp.connection
 {
+	import flash.events.ProgressEvent;
 	import flash.net.Socket;
 	
 	import org.ds.amqp.AMQP;
-	import org.ds.amqp.protocol.channel.ChannelOpen;
 	import org.ds.amqp.transport.Buffer;
 	import org.ds.amqp.transport.Frame;
 	import org.ds.logging.Logger;
 
 	public class Stream extends Socket
 	{
-		private var channels:* = {
-			current	: 0,
-			count	: 0
-		};
-		
 		public function Stream(host:String=null, port:int=0)
 		{
 			super(host, port);
-		}
-		
-		protected function get channel():uint {
-			return channels.count > 0 ? channels.current : 0;
-		}
-		
-		public function openChannels(count:int):void {
-			Logger.info("Opening Channels");
-			
-			channels.count = count;
-			for(var i:int = 1;i <= count;i++) {
-				channels.current = i;
-				writeFrame(new Frame(new ChannelOpen()));
-				flush();
-			}
-		}
 
-		public function writeFrame(frame:Frame):void {
 			
-			if(frame.payload && Logger.debugging) {
-				frame.payload.print();
-			}
-			
+		}
+		
+		public function writeFrame(frame:Frame, channel:uint=0):void {
 			writeByte(frame.type);
 			writeShort(channel);
 			writeUnsignedInt(frame.content.length);
             writeBytes(frame.content);
             writeByte(AMQP.FRAME_END);
+            
+            flush();
 		}
 
 		public function readFrame():Frame {
@@ -60,7 +39,7 @@ package org.ds.amqp.connection
 			return frame;
 		}
 		
-		public function readPayload():Buffer {
+		protected function readPayload():Buffer {
 			var length:uint 	= readUnsignedInt();
 			var payload:Buffer 	= new Buffer();
 			
@@ -70,6 +49,9 @@ package org.ds.amqp.connection
 			
 			return payload;
 		}
+		
+		
+
 				
 	}
 }

@@ -1,7 +1,6 @@
 package org.ds.amqp.protocol
 {
 	import org.ds.amqp.AMQP;
-	import org.ds.amqp.datastructures.Long;
 	import org.ds.amqp.transport.Buffer;
 	
 	

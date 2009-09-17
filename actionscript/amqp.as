@@ -46,34 +46,28 @@ package {
 		//coming soon
 		private var queues		:* = {};
 		
-		private var queue		:Queue;
+		//private var queue		:Queue;
+		
 		private var exchanges	:* = {};
 		
 		
 		public function amqp()
 		{
-			initAPI();
-		}
-
-
-		/**
-		 * External Interface API
-		 */ 
-		private function initAPI():void {
-			
-			ExternalInterface.addCallback("configure", 		api_configure);
-			ExternalInterface.addCallback("connect", 		api_connect);
-			ExternalInterface.addCallback("disconnect", 	api_disconnect);
-			ExternalInterface.addCallback("exchange", 		api_declare_exchange);			
-			ExternalInterface.addCallback("subscribe", 		api_subscribe);
-			ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);			
-			ExternalInterface.addCallback("publish",		api_publish);			
-			ExternalInterface.addCallback("bind", 			api_bind);
-			ExternalInterface.addCallback("unbind", 		api_unbind);			
-			ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
-
-			//by default we enable logging
-			ExternalInterface.call("AMQPClient.onApiReady");
+			if(ExternalInterface.available) {
+				
+				ExternalInterface.addCallback("configure", 		api_configure);
+				ExternalInterface.addCallback("connect", 		api_connect);
+				ExternalInterface.addCallback("disconnect", 	api_disconnect);
+				ExternalInterface.addCallback("exchange", 		api_declare_exchange);			
+				ExternalInterface.addCallback("subscribe", 		api_subscribe);
+				ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);			
+				ExternalInterface.addCallback("publish",		api_publish);			
+				ExternalInterface.addCallback("bind", 			api_bind);
+				ExternalInterface.addCallback("unbind", 		api_unbind);			
+				ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
+	
+				ExternalInterface.call("AMQPClient.onApiReady");
+			}
 		}
 				
 		/**
@@ -98,39 +92,39 @@ package {
 		}
 
 
-		private function api_subscribe(opts:*):void {
-			queue = new Queue(connection, opts, onDeliver);
-			queue.addEventListener(Queue.DECLARED, onQueueDeclared);
+		private function api_subscribe(opts:*):uint {
+			var queue:Queue = new Queue(connection, opts, onDeliver);
+			queues[queue.queueId] = queue;
+			return queue.queueId;
 		}
-		
 		
 		private function api_unsubscribe(queue:String):void {
 		}
 		
 				
-		private function api_publish(exchange:String, routingKey:String, payload:*):void {
-			var ex:Exchange = exchanges[exchange];
+		private function api_publish(exchangeId:uint, routingKey:String, payload:*):void {
+			var ex:Exchange = exchanges[exchangeId];
 			if(ex) {
 				ex.publish(routingKey, payload);
 			} else {
-				Logger.log("Exchange not declared: ", exchange);
+				Logger.log("Exchange not declared: ", exchangeId);
 			}
 		}
 		
-		private function api_declare_exchange(opts:*):void {
-			exchanges[opts.exchange] = new Exchange(connection, opts);
-			exchanges[opts.exchange].addEventListener(Exchange.DECLARED, onExchangeDeclared);
+		private function api_declare_exchange(opts:*):uint {
+			var exchange:Exchange = new Exchange(connection, opts)
+			exchanges[exchange.exchangeId] = exchange;
+			return exchange.exchangeId;
 		}
 		
 
-		private function api_bind(queueName:String, exchange:String, routingKey:String):void {
-			
-			
-			var ex:Exchange = exchanges[exchange];
+		private function api_bind(queueId:String, exchangeId:String, routingKey:String):void {
+
+			var ex:Exchange = exchanges[exchangeId];
 			if(ex) {
-				queue.bind(ex, routingKey);
+				queues[queueId].bind(ex, routingKey);
 			} else {
-				Logger.log("Exchange not declared: ", exchange);
+				Logger.log("Exchange not declared: ", exchangeId);
 			}
 		}
 		
@@ -146,20 +140,7 @@ package {
 		}		
 		
 		
-		/**
-		 * Helpers
-		 */
-		 private function createMethod(klass:Class, opts:*):Method {
-		 	var m:Method = new klass();
-		 	if(opts) {
-				for(var k:* in opts) {
-					m[k] = opts[k];
-				}
-			}
-		 	return m;	 	
-		 }
-		 
-		
+
 		/**
 		 * Events to send to the client
 		 */		 
@@ -174,17 +155,6 @@ package {
 		 		 
 		 private function onLogEntry(e:LogEvent):void {
 		 	ExternalInterface.call("AMQPClient.onLogEntry", e.toString());
-		 }
-		 
-		 private function onQueueDeclared(e:StateEvent):void {
-		 	var queue:Queue = e.target as Queue;
-		 	queues[queue.name] = queue;
-		 	ExternalInterface.call("AMQPClient.onQueueDeclare", queue.name);
-		 }
-		 
-		private function onExchangeDeclared(e:StateEvent):void {
-		 	var ex:Exchange = e.target as Exchange;
-		 	ExternalInterface.call("AMQPClient.onExchangeDeclare", ex.exchangeName);
 		 }
 		 
 		 private function onDeliver(m:*):void {

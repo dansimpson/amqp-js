@@ -26,8 +26,10 @@ THE SOFTWARE.
 
 package org.ds.velveteen
 {
+	import flash.external.ExternalInterface;
+	
+	import org.ds.amqp.connection.Channel;
 	import org.ds.amqp.connection.Connection;
-	import org.ds.amqp.events.MethodEvent;
 	import org.ds.amqp.protocol.Body;
 	import org.ds.amqp.protocol.basic.BasicPublish;
 	import org.ds.amqp.protocol.exchange.ExchangeDeclare;
@@ -35,16 +37,17 @@ package org.ds.velveteen
 	import org.ds.amqp.protocol.exchange.ExchangeDelete;
 	import org.ds.amqp.protocol.exchange.ExchangeDeleteOk;
 	import org.ds.amqp.protocol.headers.Basic;
-	import org.ds.amqp.transport.Frame;
-	import org.ds.amqp.transport.Transmission;
 	import org.ds.fsm.StateMachine;
 
 	public class Exchange extends StateMachine
 	{
-		public static var DECLARED		:String = "Declared";
-		public static var DELETED		:String = "Deleted";
+		private static var count		:uint	= 0;
 		
-		protected var conn		:Connection;
+		public 	static var DECLARED		:String = "Declared";
+		public 	static var DELETED		:String = "Deleted";
+		
+		protected var id		:uint;
+		protected var channel	:Channel;
 		protected var exchange	:String = "";
 		protected var type		:String = "";
 		protected var active	:Boolean = false;
@@ -53,7 +56,8 @@ package org.ds.velveteen
 		{
 			super("Null");
 			
-			conn 		= connection;
+			id			= ++count;
+			channel 	= connection.channel;
 			exchange 	= options.exchange;
 
 			var declare:ExchangeDeclare = new ExchangeDeclare();
@@ -61,9 +65,7 @@ package org.ds.velveteen
 				declare[k] = options[k];
 			}
 			
-			conn.addEventListener(ExchangeDeclareOk.EVENT, onDeclare);
-			conn.sendFrame(new Frame(declare));
-						
+			channel.send(declare, onDeclare);		
 		}
 		
 		public function get isDeclared():Boolean {
@@ -71,30 +73,32 @@ package org.ds.velveteen
 		}
 		
 		public function deleteExchange():void {
-			
-			
-			
+
 			var method:ExchangeDelete = new ExchangeDelete();
 			method.exchange = exchange;
-			
-			conn.addEventListener(ExchangeDeleteOk.EVENT, onDelete);
-			conn.sendFrame(new Frame(method));
+			channel.send(method, onDelete);
 		}
 		
 		
-		public function onDelete(e:MethodEvent):void {
-			conn.removeEventListener(ExchangeDeleteOk.EVENT, onDelete);
+		public function onDelete(result:ExchangeDeleteOk):void {
 			state = DELETED;
 		}
 		
 		
-		public function onDeclare(e:MethodEvent):void {
-			conn.removeEventListener(ExchangeDeclareOk.EVENT, onDeclare);
+		public function onDeclare(result:ExchangeDeclareOk):void {
 			state = DECLARED;
+			
+			if(ExternalInterface.available) {
+				ExternalInterface.call("AMQPClient.onExchangeDeclare", exchange);
+			}
 		}
 		
 		public function get exchangeName():String {
 			return exchange;
+		}
+		
+		public function get exchangeId():uint {
+			return id;
 		}
 		
 		public function publish(routingKey:String, message:*):void {
@@ -102,16 +106,14 @@ package org.ds.velveteen
 			var pub:BasicPublish = new BasicPublish();
 			pub.exchange = exchange;
 			pub.routingKey = routingKey;
+			
+			pub.body = new Body();
+			pub.body.data = message;
+			
+			pub.header = new Basic();
+			pub.header.bodySize = pub.body.length;
 
-			var transmission:Transmission = new Transmission(pub);
-			
-			transmission.body = new Body();
-			transmission.body.data = message;
-			
-			transmission.header = new Basic();
-			transmission.header.bodySize = transmission.body.length;
-			
-			conn.send(transmission);
+			channel.send(pub);
 		}
 		
 	}

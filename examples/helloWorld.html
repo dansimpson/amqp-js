@@ -8,6 +8,7 @@
 	<script src="../javascripts/swfobject.js" type="text/javascript"></script>
 	
 	<script type="text/javascript">
+	
 	function directCallback(m) {
 		alert("Direct Callback");
 	};
@@ -29,12 +30,11 @@
 			host: "amqp.peermessaging.com"
 		},
 		logLevel    : 1,
-		logger		: console,
+		//logger		: console,
 		swfPath		: "../swfs/amqp.swf"
 	});
-
-
-	AMQPClient.addListener("ready", function() {
+	
+	AMQPClient.on("ready", function() {
 
 		//Declare a queue and subscribe to it.
 		//The callback is called when messages
@@ -43,27 +43,15 @@
 			callback: directCallback
 		});
 
-
-
-
-		//when the queue is declared, bind the exchange to it, so that
-		//messages published to the exchange are delivered to the queue
-		//and the javascript callback is called
-		myQueue.addListener("declared", function(queue) {
+		myExchange = new Exchange({
+			declare: {
+				exchange: "ubertopic",
+				type	: "topic"
+			}
+		});
 		
-			console.log("DEC");
-			//Declare an exchange for publishing messages
-			//and binding
-			myExchange = new Exchange({
-				declare: {
-					exchange: "ubertopic",
-					type	: "topic"
-				}
-			});
-			
-			queue.bind(myExchange, "keyTest", exchangeCallback);
-			
-		}, this);
+		myQueue.bind(myExchange, "keyTest", exchangeCallback);
+
 	});
 	</script>
 

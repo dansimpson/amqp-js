@@ -121,7 +121,7 @@ package org.ds.amqp.datastructures
            				b.writeByte(83);
             			b.writeString(o);
             			break;
-            		case LongString:
+            		case ByteArray:
            				b.writeByte(83);
             			b.writeLongString(o);
             			break;
@@ -157,8 +157,8 @@ package org.ds.amqp.datastructures
             		case String:
             			len += (o as String).length + 4;
 						break;
-            		case LongString:
-            			len += (o as LongString).length + 4;
+            		case ByteArray:
+            			len += (o as ByteArray).length + 4;
 						break;
             		case int:
             			len += 4;

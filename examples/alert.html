@@ -47,7 +47,7 @@
 			expressPath	: "../swfs/expressInstall.swf"
 		});
 	
-		AMQPClient.addListener("ready", function() {
+		AMQPClient.on("ready", function() {
 	
 			myQueue = new MessageQueue({
 				callback: myCallback
@@ -61,11 +61,8 @@
 				}
 			});
 			
-			myQueue.addListener("declared", function(queue) {
-				queue.bind(myExchange, "alert1", cbOne);
-				queue.bind(myExchange, "alert2", cbTwo);
-			}, this);
-				
+			myQueue.bind(myExchange, "alert1", cbOne);
+			myQueue.bind(myExchange, "alert2", cbTwo);
 		});
 	</script>
 
