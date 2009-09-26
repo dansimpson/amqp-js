@@ -14,69 +14,54 @@
 ##Firewall Note
 This will not work for computers behind a firewall blocking outoing traffic on port 843.  See below for details.
 
-##Javascript
+##Javascript UPDATED API 9/26/09
 In order to send and receive messages from an AMQP broker with javascript,
 you need to do the following.
 
 Include "swfobject.js" and "amqp.js" in your document:
 
 	<script src="path/to/swfobject.js" type="text/javascript"></script>
-	<script src="path/to/amqp.js" type="text/javascript"></script>
+	<script src="path/to/mq.js" type="text/javascript"></script>
 
 Configure the AMQP client and setup a simple hello world:
 
-	
-	function directCallback(m) {
-		alert("Direct Callback");
-	};
-
-	function exchangeCallback(message) {
-		alert(message.data.message); //hello world!
-	};
-
+	//publish a message to myExhcange
 	function helloWorld() {
-		myExchange.publish("keyTest", { message: "hello world!" });
+		MQ.exchange("myExchange").publish({ message: "hello world!" });
 	};
 
-	var myQueue;
-	var myExchange;
+	//configure params here
+	MQ.configure({
+		host: "amqp.peermessaging.com"
+	});
 
-	//Initialize the proxy
-	AMQPClient.initialize({
-		connection: {
-			host: "amqp.peermessaging.com"
+	//Declare a queue and subscribe to it.
+	//The callback is called when messages
+	//are delivered to the queue.
+	//bind the exchange to it, so that
+	//messages published to the exchange are delivered to the queue
+	//and the javascript callback is called
+	MQ.queue("auto").bind("myExchange).callback(function(m) {
+		alert(m.data.message);
+	});
+
+	//embed the swf in the element
+	//with id AMQPProxy
+	swfobject.embedSWF(
+		"../swfs/amqp.swf",
+		"AMQPProxy",
+		"1",
+		"1",
+		"9",
+		"../swfs/expressInstall.swf",
+		{},
+		{
+			allowScriptAccess: "always",
+			wmode: 'opaque',
+			bgcolor: '#ff0000'
 		},
-		logLevel	: 2, //slightly chatty.
-		swfPath		: "path/to/AMQPFlash.swf",
-		expressPath	: "path/to/expressInstall.swf"
-	});
-
-
-	AMQPClient.addListener("ready", function() {
-
-		//Declare a queue and subscribe to it.
-		//The callback is called when messages
-		//are delivered to the queue.
-		myQueue = new MessageQueue({
-			callback: directCallback
-		});
-
-		//Declare an exchange for publishing messages
-		//and binding
-		myExchange = new Exchange({
-			declare: {
-				exchange: "ubertopic",
-				type: "topic"
-			}
-		});
-
-		//bind the exchange to it, so that
-		//messages published to the exchange are delivered to the queue
-		//and the javascript callback is called
-		myQueue.bind(myExchange, "keyTest", exchangeCallback);
-	});
-	
-
+		{}
+	);
 
 ##Requirements
 AMQP Server
