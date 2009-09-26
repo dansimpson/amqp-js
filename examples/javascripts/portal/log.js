@@ -8,7 +8,7 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 
 	initComponent: function() {
 	
-		AMQPClient.logger = this;
+		MQ.logger = this;
 		
 		this.store = new Ext.data.ArrayStore({
 			fields: [
@@ -88,7 +88,7 @@ Ext.ux.LogPanel = Ext.extend(Ext.grid.GridPanel, {
 	},
 	
 	update: function(level){
-		AMQPClient.setLogLevel(level);
+		MQ.setLogLevel(level);
 	},
 	
 	getLevel: function() {

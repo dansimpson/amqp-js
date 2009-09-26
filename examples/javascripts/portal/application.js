@@ -66,15 +66,11 @@ Ext.onReady(function() {
 
 	Application = new Ext.Application();
 	
-	AMQPClient.initialize({
-		connection: {
-			host: "amqp.peermessaging.com"
-		},
-		logLevel: 2,
-		//logger: console,
-		swfPath		: "../swfs/amqp.swf",
-		expressPath	: "../swfs/expressInstall.swf"
+	MQ.configure({
+		host: "amqp.peermessaging.com"
 	});
+
+	/*MQ.exchange("demo");
 	
 	AMQPClient.addListener("ready", function() {
 		MQ = new MessageQueue({
@@ -87,7 +83,23 @@ Ext.onReady(function() {
 				type: "topic"
 			}
 		});
-	});
+	});*/
+	
+	swfobject.embedSWF(
+		"../swfs/amqp.swf",
+		"AMQPProxy",
+		"1",
+		"1",
+		"9",
+		"../swfs/expressInstall.swf",
+		{},
+		{
+			allowScriptAccess: "always",
+			wmode: 'opaque',
+			bgcolor: '#ff0000'
+		},
+		{}
+	);
 	
 	
 	Ext.get("loading").remove();

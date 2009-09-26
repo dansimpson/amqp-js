@@ -61,7 +61,7 @@ Ext.ux.InteractiveGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		});
 		
 		//wire up the AMQPClient
-		AMQPClient.addListener("exchangeDeclared", this.bindExchange, this);
+		MQ.queue("auto").bind("grid").callback(this.onDataUpdate.createDelegate(this));
 		
 		this.on('rowclick', this.updatePrice, this);
 	
@@ -75,9 +75,7 @@ Ext.ux.InteractiveGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				
 		obj.price += 1;
 
-		if(this.exchange) {
-			this.exchange.publish("grid", obj);
-		}
+		MQ.exchange("grid").publish(obj);
 	},
 	
 	onDataUpdate: function(m) {
@@ -93,12 +91,6 @@ Ext.ux.InteractiveGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				record.set(f.name,m.data[f.name]);
 			});
 		}
-	},
-	
-	bindExchange: function(ex) {
-		this.exchange = ex;
-		MQ.bind(this.exchange, "grid", this.onDataUpdate.createDelegate(this));
 	}
-	
 });
 Ext.ComponentMgr.registerType('interactiveGridPanel', Ext.ux.InteractiveGridPanel);

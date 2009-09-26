@@ -41,8 +41,6 @@ package org.ds.velveteen
 
 	public class Exchange extends StateMachine
 	{
-		private static var count		:uint	= 0;
-		
 		public 	static var DECLARED		:String = "Declared";
 		public 	static var DELETED		:String = "Deleted";
 		
@@ -56,7 +54,6 @@ package org.ds.velveteen
 		{
 			super("Null");
 			
-			id			= ++count;
 			channel 	= connection.channel;
 			exchange 	= options.exchange;
 
@@ -87,19 +84,12 @@ package org.ds.velveteen
 		
 		public function onDeclare(result:ExchangeDeclareOk):void {
 			state = DECLARED;
-			
-			if(ExternalInterface.available) {
-				ExternalInterface.call("AMQPClient.onExchangeDeclare", exchange);
-			}
 		}
 		
 		public function get exchangeName():String {
 			return exchange;
 		}
 		
-		public function get exchangeId():uint {
-			return id;
-		}
 		
 		public function publish(routingKey:String, message:*):void {
 			

@@ -37,6 +37,14 @@ var SnakeGame = new Class({
 		$(document).addEvent("keydown", this.onKeyPress.bind(this));
 		this.canvas.addEvent("click", this.spawn.bind(this));
 		
+		this.exchange = MQ.exchange("snake", {
+			type: "fanout"
+		});
+		
+		MQ.queue("auto").bind("snake").callback(this.onMessage, this);
+		
+
+		
 		this.start();
 	},
 	
@@ -253,7 +261,7 @@ var Snake = new Class({
 	},
 	
 	notify: function(cmd, data) {
-		this.game.exchange.publish("snake", {src: this.name, cmd: cmd, data: data});
+		this.game.exchange.publish({src: this.name, cmd: cmd, data: data});
 	},
 	
 	update: function(data) {
