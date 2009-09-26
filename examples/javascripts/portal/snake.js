@@ -7,26 +7,17 @@ Ext.ux.SnakePanel = Ext.extend(Ext.Panel, {
 			id: "snakegame"
 		});
 		
-		AMQPClient.addListener("exchangeDeclared", this.createSnakeGame, this);
+		this.on("afterrender", this.createSnakeGame, this);
 
 		Ext.ux.LogPanel.superclass.initComponent.apply(this, arguments);
 	},
+
 	
-	
-	testFn: function(m) {
-		this.game.onMessage(m);
-	},
-	
-	
-	createSnakeGame: function(ex) {
+	createSnakeGame: function() {
 		this.game = new SnakeGame({
 			canvas	: $('snakegame'),
-			name	: MQ.declare.queue,
-			exchange: ex
+			name	: Math.random().toString()
 		});
-		
-		//MQ.bind(ex, "snake", this.game.onMessage.createDelegate(game));
-		MQ.bind(ex, "snake", this.testFn.createDelegate(this));
 	}
 });
 Ext.ComponentMgr.registerType('snakePanel', Ext.ux.SnakePanel);

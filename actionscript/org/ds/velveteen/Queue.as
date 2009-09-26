@@ -40,14 +40,12 @@ package org.ds.velveteen
 	
 	public class Queue extends StateMachine
 	{
-		private static var count		:uint	= 0;
 		public 	static var DECLARED		:String = "Declared";
 		public 	static var SUBSCRIBED	:String = "Subscribed";
 		public 	static var UNSUBSCRIBED	:String = "Unsubscribed";
 		public 	static var DELETED		:String = "Deleted";
 		
-		
-		protected var id			:uint;
+		protected var auto			:Boolean = false;
 		protected var channel		:Channel;
 		protected var queue			:String;
 		protected var callback		:Function;
@@ -57,14 +55,19 @@ package org.ds.velveteen
 		{
 			super("Null");
 			
-			id			= ++count;
 			channel 	= connection.createChannel();
 			callback 	= cb;
+			
 			
 			var declare:QueueDeclare = new QueueDeclare();
 			if(options) {
 				for(var k:* in options) {
 					declare[k] = options[k];
+				}
+				
+				if(declare.queue == "auto") {
+					auto = true;
+					declare.queue = "";
 				}
 			}
 			
@@ -179,8 +182,7 @@ package org.ds.velveteen
 			var m:BasicDeliver 	= e.instance as BasicDeliver;
 			
 			var msg:* = {
-				qid			: id,
-				queue		: m.consumerTag,
+				queue		: auto ? "auto" : m.consumerTag,
 				exchange	: m.exchange,
 				routingKey	: m.routingKey,
 				data		: m.body.data
@@ -193,11 +195,5 @@ package org.ds.velveteen
 		public function get name():String {
 			return queue;
 		}
-		
-				
-		public function get queueId():uint {
-			return id;
-		}
-
 	}
 }

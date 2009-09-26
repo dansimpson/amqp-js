@@ -55,7 +55,7 @@ Ext.ux.ChatPanel = Ext.extend(Ext.grid.GridPanel, {
 		});
 		
 		//wire up the AMQPClient
-		AMQPClient.addListener("exchangeDeclared", this.bindExchange, this);
+		MQ.queue("auto").bind("chat").callback(this.onMessage.createDelegate(this));
 
 		Ext.ux.ChatPanel.superclass.initComponent.apply(this, arguments);
 	},
@@ -65,9 +65,7 @@ Ext.ux.ChatPanel = Ext.extend(Ext.grid.GridPanel, {
 		var message = writer.getValue();
 		writer.setValue("");
 		
-		if(this.exchange) {
-			this.exchange.publish("chat", {name: this.getUserName(), message: message});
-		}
+		MQ.exchange("chat").publish({name: this.getUserName(), message: message});
 	},
 	
 	onMessage: function(m) {
@@ -90,11 +88,6 @@ Ext.ux.ChatPanel = Ext.extend(Ext.grid.GridPanel, {
 	
 	getUserName: function() {
 		return this.getBottomToolbar().get("user").getValue();
-	},
-	
-	bindExchange: function(ex) {
-		this.exchange = ex;
-		MQ.bind(this.exchange, "chat", this.onMessage.createDelegate(this));
 	}
 });
 

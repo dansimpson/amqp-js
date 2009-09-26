@@ -4,57 +4,8 @@
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
 	<title>AMQP JS - Advanced Message Queue Protocol Javascript Client Implementaiton - Stocks</title>
-	<script src="../javascripts/amqp.js" type="text/javascript"></script>
+	<script src="../javascripts/mq.js" type="text/javascript"></script>
 	<script src="../javascripts/swfobject.js" type="text/javascript"></script>
-	
-	<script type="text/javascript">
-	
-	function directCallback(m) {
-		alert("Direct Callback");
-	};
-
-	function exchangeCallback(message) {
-		alert(message.data.message); //hello world!
-	};
-	
-	function helloWorld() {
-		myExchange.publish("keyTest", { message: "hello world!" });
-	};
-
-	var myQueue;
-	var myExchange;
-
-	//Initialize the proxy
-	AMQPClient.initialize({
-		connection: {
-			host: "amqp.peermessaging.com"
-		},
-		logLevel    : 1,
-		//logger		: console,
-		swfPath		: "../swfs/amqp.swf"
-	});
-	
-	AMQPClient.on("ready", function() {
-
-		//Declare a queue and subscribe to it.
-		//The callback is called when messages
-		//are delivered to the queue.
-		myQueue = new MessageQueue({
-			callback: directCallback
-		});
-
-		myExchange = new Exchange({
-			declare: {
-				exchange: "ubertopic",
-				type	: "topic"
-			}
-		});
-		
-		myQueue.bind(myExchange, "keyTest", exchangeCallback);
-
-	});
-	</script>
-
 </head>
 <body>
 
@@ -63,10 +14,65 @@
 </div>
 
 <a href="#" onClick="helloWorld();">Hello World</a><br/>
-
+<a href="#" onClick="helloWorld2();">Hello World Test Key</a><br/>
+<a href="#" onClick="helloWorld3();">Hello World 3</a><br/>
 <div id="logger">
 </div>
 
+
+<script type="text/javascript">
+
+	function helloWorld() {
+		MQ.exchange("stocks").publish({ value: -45.00 }, "stocks.nyse.amd");
+	};
+	
+	function helloWorld2() {
+		MQ.exchange("stocks").publish({ value: 16.00}, "stocks.nasdaq.intl");
+	};
+	
+	function helloWorld3() {
+		MQ.exchange("stocks").publish({ value: 48.00 }, "stocks.nasdaq.fdx");
+	};
+	
+	MQ.configure({
+		host: "amqp.peermessaging.com"
+	});
+	
+	MQ.queue("auto").callback(function(m) {
+		alert("No Binding Matches");
+	});
+	
+	MQ.queue("auto").bind("stocks", "stocks.nasdaq.intl").callback(function(m) {
+		alert("Intel " + m.data.value);
+	});
+	
+	MQ.queue("auto").bind("stocks", "stocks.nasdaq.*").callback(function(m) {
+		alert("Nasdaq " + m.data.value);
+	});
+	
+	MQ.queue("auto").bind("stocks", "stocks.#").callback(function(m) {
+		alert("All Indexs " + m.data.value);
+	});
+	
+	
+	swfobject.embedSWF(
+		"../swfs/amqp.swf",
+		"AMQPProxy",
+		"1",
+		"1",
+		"9",
+		"../swfs/expressInstall.swf",
+		{},
+		{
+			allowScriptAccess: "always",
+			wmode: 'opaque',
+			bgcolor: '#ff0000'
+		},
+		{}
+	);
+
+</script>
+	
 </body>
 
 </html>

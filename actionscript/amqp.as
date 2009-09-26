@@ -55,7 +55,6 @@ package {
 		{
 			if(ExternalInterface.available) {
 				
-				ExternalInterface.addCallback("configure", 		api_configure);
 				ExternalInterface.addCallback("connect", 		api_connect);
 				ExternalInterface.addCallback("disconnect", 	api_disconnect);
 				ExternalInterface.addCallback("exchange", 		api_declare_exchange);			
@@ -66,24 +65,20 @@ package {
 				ExternalInterface.addCallback("unbind", 		api_unbind);			
 				ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
 	
-				ExternalInterface.call("AMQPClient.onApiReady");
+				ExternalInterface.call("MQ.onLoad");
 			}
 		}
 				
 		/**
 		 * Allows default passing from the javascript implementation
 		 */ 
-		private function api_configure(options:*):void {
-			if(options.logLevel) {
-				logger.addEventListener(LogEvent.ENTRY, onLogEntry);
-				logger.level = options.logLevel;
-			}
-		}
 				
 		private function api_connect(params:*):void {
 			connection = new Connection(params);
 			connection.addEventListener(Connection.READY, 	onConnect);
 			connection.addEventListener(Connection.CLOSED, 	onDisconnect);
+			
+			logger.addEventListener(LogEvent.ENTRY, onLogEntry);
 		}
 		
 				
@@ -92,39 +87,39 @@ package {
 		}
 
 
-		private function api_subscribe(opts:*):uint {
+		private function api_subscribe(opts:*):String {
 			var queue:Queue = new Queue(connection, opts, onDeliver);
-			queues[queue.queueId] = queue;
-			return queue.queueId;
+			queues[opts.queue] = queue;
+			return opts.queue;
 		}
 		
 		private function api_unsubscribe(queue:String):void {
 		}
 		
 				
-		private function api_publish(exchangeId:uint, routingKey:String, payload:*):void {
-			var ex:Exchange = exchanges[exchangeId];
+		private function api_publish(exchange:String, routingKey:String, payload:*):void {
+			var ex:Exchange = exchanges[exchange];
 			if(ex) {
 				ex.publish(routingKey, payload);
 			} else {
-				Logger.log("Exchange not declared: ", exchangeId);
+				Logger.log("Exchange not declared: ", exchange);
 			}
 		}
 		
-		private function api_declare_exchange(opts:*):uint {
+		private function api_declare_exchange(opts:*):String {
 			var exchange:Exchange = new Exchange(connection, opts)
-			exchanges[exchange.exchangeId] = exchange;
-			return exchange.exchangeId;
+			exchanges[exchange.exchangeName] = exchange;
+			return exchange.exchangeName;
 		}
 		
 
-		private function api_bind(queueId:String, exchangeId:String, routingKey:String):void {
+		private function api_bind(queue:String, exchange:String, routingKey:String):void {
 
-			var ex:Exchange = exchanges[exchangeId];
+			var ex:Exchange = exchanges[exchange];
 			if(ex) {
-				queues[queueId].bind(ex, routingKey);
+				queues[queue].bind(ex, routingKey);
 			} else {
-				Logger.log("Exchange not declared: ", exchangeId);
+				Logger.log("Exchange not declared: ", exchange);
 			}
 		}
 		
@@ -145,20 +140,19 @@ package {
 		 * Events to send to the client
 		 */		 
 		 private function onConnect(e:Event):void {
-		 	ExternalInterface.call("AMQPClient.onConnect");
-		 	ExternalInterface.call("AMQPClient.onReady");
+		 	ExternalInterface.call("MQ.onConnect");
 		 }
 
 		 private function onDisconnect(e:Event):void {
-		 	ExternalInterface.call("AMQPClient.onDisconnect");
+		 	ExternalInterface.call("MQ.onDisconnect");
 		 }
 		 		 
 		 private function onLogEntry(e:LogEvent):void {
-		 	ExternalInterface.call("AMQPClient.onLogEntry", e.toString());
+		 	ExternalInterface.call("MQ.onLogEntry", e.toString());
 		 }
 		 
 		 private function onDeliver(m:*):void {
-		 	ExternalInterface.call("AMQPClient.onReceive", m);
+		 	ExternalInterface.call("MQ.onReceive", m);
 		 }	
 	}
 }
