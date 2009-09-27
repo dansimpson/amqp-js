@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<div id="amqp-wrap" style="position:absolute;z-index:10000;left:10;top: 10;">
+<div id="amqp-wrap" style="position:absolute;z-index:10000;">
 	<div id="AMQPProxy">Loading AMQP Proxy</div>
 </div>
 
@@ -56,10 +56,10 @@
 	
 	
 	swfobject.embedSWF(
-		"../swfs/amqp.swf",
+		"../swfs/amqp.swf?" + Math.random().toString(),
 		"AMQPProxy",
-		"1",
-		"1",
+		"10",
+		"10",
 		"9",
 		"../swfs/expressInstall.swf",
 		{},
@@ -68,7 +68,10 @@
 			wmode: 'opaque',
 			bgcolor: '#ff0000'
 		},
-		{}
+		{},
+		function() {
+			//object loaded callback.. useful for debugging
+		}
 	);
 
 </script>

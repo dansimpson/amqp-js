@@ -185,8 +185,10 @@ var MQ = {
 	queues		: {},
 
 	api			: null,
+	
+	logger		: null,
 	logLevel	: 2,
-	logger		: console,
+	
 	host		: "amqp.peermessaging.com",
 	element		: "AMQPProxy",
 	autoConnect	: true,
@@ -201,13 +203,16 @@ var MQ = {
 		});
 	},
 
+	//private
 	onLoad: function() {
 		this.api = document.getElementById(this.element);
+		this.update();
 		if(this.autoConnect) {
 			this.connect();
 		}
 	},
 
+	//private
 	onConnect: function() {
 		this.update();
 		this.flush();
@@ -246,7 +251,19 @@ var MQ = {
 			queue: name
 		}, opts));
 	},
-	
+
+	topic: function(name) {
+		return this.exchange(name, { type: "topic" });
+	},
+
+	fanout: function(name) {
+		return this.exchange(name, { type: "fanout" });
+	},
+
+	direct: function(name) {
+		return this.exchange(name, { type: "direct" });
+	},
+
 	exchange: function(name, opts) {
 		if(!this.exchanges[name]) {
 			this.createExchange(name, opts);
@@ -264,7 +281,9 @@ var MQ = {
 	
 	//private
 	update: function() {
-		this.dispatch("setLogLevel", this.logLevel);
+		if(this.logger) {
+			this.dispatch("setLogLevel", this.logLevel);
+		}
 	},
 	
 	//private

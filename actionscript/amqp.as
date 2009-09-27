@@ -28,10 +28,9 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.external.ExternalInterface;
+	import flash.system.Security;
 	
 	import org.ds.amqp.connection.Connection;
-	import org.ds.amqp.protocol.Method;
-	import org.ds.fsm.StateEvent;
 	import org.ds.logging.LogEvent;
 	import org.ds.logging.Logger;
 	import org.ds.velveteen.Exchange;
@@ -40,14 +39,10 @@ package {
 
 	public class amqp extends Sprite
 	{
-		private var logger		:Logger 	= new Logger(1);
+		private var logger		:Logger 	= new Logger();
 		private var connection	:Connection	= null;
 		
-		//coming soon
 		private var queues		:* = {};
-		
-		//private var queue		:Queue;
-		
 		private var exchanges	:* = {};
 		
 		
@@ -55,34 +50,41 @@ package {
 		{
 			if(ExternalInterface.available) {
 				
+				Security.allowDomain("*");
+				Security.allowInsecureDomain("*");
+				
 				ExternalInterface.addCallback("connect", 		api_connect);
 				ExternalInterface.addCallback("disconnect", 	api_disconnect);
-				ExternalInterface.addCallback("exchange", 		api_declare_exchange);			
+				ExternalInterface.addCallback("exchange", 		api_declare_exchange);
 				ExternalInterface.addCallback("subscribe", 		api_subscribe);
-				ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);			
-				ExternalInterface.addCallback("publish",		api_publish);			
+				ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);
+				ExternalInterface.addCallback("publish",		api_publish);
 				ExternalInterface.addCallback("bind", 			api_bind);
-				ExternalInterface.addCallback("unbind", 		api_unbind);			
+				ExternalInterface.addCallback("unbind", 		api_unbind);
 				ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
+	
+				//allow all logged messages to pass down to javascript land
+				logger.addEventListener(LogEvent.ENTRY, onLogEntry);
 	
 				ExternalInterface.call("MQ.onLoad");
 			}
 		}
 				
-		/**
-		 * Allows default passing from the javascript implementation
-		 */ 
 				
 		private function api_connect(params:*):void {
+			
+			Logger.info("Attempting Connection");
+			
 			connection = new Connection(params);
 			connection.addEventListener(Connection.READY, 	onConnect);
 			connection.addEventListener(Connection.CLOSED, 	onDisconnect);
-			
-			logger.addEventListener(LogEvent.ENTRY, onLogEntry);
 		}
 		
 				
 		private function api_disconnect():void {
+			
+			Logger.info("Disconnecting");
+			
 			connection.disconnect();
 		}
 
@@ -94,6 +96,10 @@ package {
 		}
 		
 		private function api_unsubscribe(queue:String):void {
+			if(queues[queue]) {
+				(queues[queue] as Queue).unsubscribe();
+				delete queues[queue];
+			}
 		}
 		
 				
@@ -102,7 +108,7 @@ package {
 			if(ex) {
 				ex.publish(routingKey, payload);
 			} else {
-				Logger.log("Exchange not declared: ", exchange);
+				Logger.log("Exchange not declared: " + exchange);
 			}
 		}
 		

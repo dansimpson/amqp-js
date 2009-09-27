@@ -5,7 +5,6 @@
 * [Google Group Page](http://groups.google.com/group/amqp-js) or amqp-js@googlegroups.com
 
 ##In development
-* New, more concise, high level API
 * Adaptor interface for alternative transports (WebSockets, Comet)
 * TLS Support
 * Examples
@@ -15,38 +14,80 @@
 This will not work for computers behind a firewall blocking outoing traffic on port 843.  See below for details.
 
 ##Javascript UPDATED API 9/26/09
-In order to send and receive messages from an AMQP broker with javascript,
-you need to do the following.
+I rewrote the API with the requirement that the
+programmer does not have to deal with execution order.  There are some caveats,
+but the model allows for very consise and simple implementation.
 
-Include "swfobject.js" and "amqp.js" in your document:
+
+##Getting Started
+
+Include "mq.js" in your document, along with embedding the swf.  I use "swfobject.js":
 
 	<script src="path/to/swfobject.js" type="text/javascript"></script>
 	<script src="path/to/mq.js" type="text/javascript"></script>
 
-Configure the AMQP client and setup a simple hello world:
+Configure the AMQP client and do work
 
-	//publish a message to myExhcange
-	function helloWorld() {
-		MQ.exchange("myExchange").publish({ message: "hello world!" });
-	};
 
 	//configure params here
 	MQ.configure({
+		//enable logging to the console
+		//logger: console,
 		host: "amqp.peermessaging.com"
 	});
 
-	//Declare a queue and subscribe to it.
-	//The callback is called when messages
-	//are delivered to the queue.
-	//bind the exchange to it, so that
-	//messages published to the exchange are delivered to the queue
-	//and the javascript callback is called
-	MQ.queue("auto").bind("myExchange).callback(function(m) {
-		alert(m.data.message);
+	//create a queue, with an auto generated unique name
+	//and subscribe. Note: You can only have one auto exchange
+	MQ.queue("auto");
+
+	//subscribe to a named queue and handle messages sent to it
+	//in a round robin fashion (the behavior of AMQP shared queues)
+	MQ.queue("roundRobin").callback(function(m) {
+		alert("message receieved");
 	});
 
-	//embed the swf in the element
-	//with id AMQPProxy
+	
+	//declare a topic exchange
+	MQ.topic("fooTopic");
+	
+	//declare a fanout exchange
+	MQ.fanout("fooFanout");
+	
+	//declare a direct exchange
+	MQ.direct("fooDirect");
+	
+	//bind your auto queue to a topic exchange, with a routingKey
+	MQ.queue("auto").bind("fooTopic", "foo.*.bar").callback(function(m) {
+		alert(m.data.foo);
+	});
+	
+	//bind the auto queue to a fanout exchange
+	MQ.queue("auto").bind("fooFanout").callback(function(m) {
+		alert("fooFanout message received");
+	});
+
+
+	//publish a message to an exchange
+	MQ.topic("fooTopic").publish({ foo: "bar" }, "foo.bang.bar");
+
+	//same shit, different exchange
+	MQ.fanout("fooFanout").publish({ foo: "bar" });
+	
+	//this is identical to the above code
+	MQ.exchange("fooExchange", { type: "fanout" }).publish({ foo: "bar" });
+	
+	
+	//the received message format is as follows
+	var m = {
+		data		: { ... }, 	//your data object (json)
+		exchange	: "", 		//the exchange name
+		queue		: "",		//the queue name
+		routingKey	: "",		//key for topic exchanges
+	};
+	
+	//this is a recommended way of embedding the swf file
+	//although, you can use any method you like and the swf
+	//when loaded will allow the above code to run in order.
 	swfobject.embedSWF(
 		"../swfs/amqp.swf",
 		"AMQPProxy",
@@ -57,8 +98,8 @@ Configure the AMQP client and setup a simple hello world:
 		{},
 		{
 			allowScriptAccess: "always",
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
+			wmode	: "opaque",
+			bgcolor	: "#ff0000"
 		},
 		{}
 	);
@@ -86,3 +127,6 @@ and an init script to daemonize the flash policy server.  This is fully working 
 Note:  the client's network must allow outgoing traffic on port 843 in order for any flash
 socket activity.
 
+
+##Thanks
+Ralf S. Engelschall

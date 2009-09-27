@@ -29,12 +29,16 @@ package org.ds.velveteen
 	import org.ds.amqp.connection.Channel;
 	import org.ds.amqp.connection.Connection;
 	import org.ds.amqp.events.MethodEvent;
+	import org.ds.amqp.protocol.basic.BasicCancel;
+	import org.ds.amqp.protocol.basic.BasicCancelOk;
 	import org.ds.amqp.protocol.basic.BasicConsume;
 	import org.ds.amqp.protocol.basic.BasicConsumeOk;
 	import org.ds.amqp.protocol.basic.BasicDeliver;
 	import org.ds.amqp.protocol.queue.QueueBind;
 	import org.ds.amqp.protocol.queue.QueueDeclare;
 	import org.ds.amqp.protocol.queue.QueueDeclareOk;
+	import org.ds.amqp.protocol.queue.QueueDelete;
+	import org.ds.amqp.protocol.queue.QueueDeleteOk;
 	import org.ds.fsm.StateMachine;
 	import org.ds.logging.Logger;
 	
@@ -81,29 +85,31 @@ package org.ds.velveteen
 		}
 		
 		public function unsubscribe():void {
+			
+			var cancel:BasicCancel = new BasicCancel();
+			cancel.consumerTag = queue;
+
+            channel.send(cancel, onUnsubscribe);
+		}
+		
+		public function onUnsubscribe(ok:BasicCancelOk):void {
+			state = UNSUBSCRIBED;
 		}
 		
 		public function destroy():void {
+			var dest:QueueDelete = new QueueDelete();
+			
+			dest.queue = queue;
+			dest.ifUnused = true;
+			
+			channel.send(dest, onDestroy);
+		}
+		
+		public function onDestroy(ok:QueueDeleteOk):void {
+			state = DELETED;
 		}
 		
 		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null):void {
-
-			/*var config:* = {
-				exchange	: exchange,
-				routingKey	: routingKey,
-				callback	: callback
-			};
-			
-			if(!isSubscribed) {
-				pending.push(config);
-				return;
-			}*/
-			
-			/*if(!exchange.isDeclared) {
-				pending.push(config);
-				exchange.addEventListener(Exchange.DECLARED, onExchangeDeclare);
-				return;
-			}*/
 
 			var bind:QueueBind = new QueueBind();
 			bind.exchange 	= exchange.exchangeName;
@@ -115,23 +121,11 @@ package org.ds.velveteen
 			} else {
 				pendingBinds.push(bind);
 			}
-			
-			//create the exchange binding
-			/*if(!bindings[exchange.exchangeName]) {
-				bindings[exchange.exchangeName] = {
-					routes: {}
-				}
-			}
-			
-			//create the key binding
-			if(!bindings[exchange.exchangeName][routingKey]) {
-				bindings[exchange.exchangeName][routingKey] = {
-					callback: callback
-				}
-			}*/
 		}
 		
-		
+		/**
+		 * Not supports by AMQP 08
+		 */ 
 		public function unbind(exchange:Exchange, options:*=null):Queue {
 			return this;
 		}
