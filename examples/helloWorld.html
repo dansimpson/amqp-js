@@ -38,6 +38,18 @@
 		host: "amqp.peermessaging.com"
 	});
 	
+	MQ.on("load", function() {
+		console.log("Test");
+	});
+	
+	MQ.on("connect", function() {
+		alert("Connected");
+	});
+	
+	MQ.on("disconnect", function() {
+		alert("Disconnected");
+	});
+	
 	MQ.queue("auto").callback(function(m) {
 		alert("No Binding Matches");
 	});
@@ -65,8 +77,8 @@
 		{},
 		{
 			allowScriptAccess: "always",
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
+			wmode: "opaque",
+			bgcolor: "#ff0000"
 		},
 		{},
 		function() {

@@ -70,7 +70,7 @@ Configure the AMQP client and do work
 	//publish a message to an exchange
 	MQ.topic("fooTopic").publish({ foo: "bar" }, "foo.bang.bar");
 
-	//same shit, different exchange
+	//same thing, different exchange
 	MQ.fanout("fooFanout").publish({ foo: "bar" });
 	
 	//this is identical to the above code

@@ -95,6 +95,7 @@ var Binding = extend(Dispatcher, function(queue, exchange, key) {
 	MQ.dispatch("bind", queue, exchange, key);
 }, {
 	destroy: function() {
+		//not supported with AMQP 08, But 09
 	},
 	
 	callback: function(cb, scope) {
@@ -112,7 +113,7 @@ var Queue = extend(Dispatcher, function(opts) {
 	MQ.dispatch("subscribe", opts);
 }, {
 
-	bindings	: {},
+	bindings: {},
 	
 	bind: function(exchange, key) {
 	
@@ -174,10 +175,9 @@ Exchange.prototype = {
 
 
 /*
-* Singleton(ish) for doing anything and everything related
-* to getting up and running with amqp-js.
+* Adaptor interface for the flash based AMQP API
 */
-var MQ = {
+var FlashAdaptor = extend(Dispatcher, function(){}, {
 
 	buffer		: [],
 
@@ -190,6 +190,11 @@ var MQ = {
 	logLevel	: 2,
 	
 	host		: "amqp.peermessaging.com",
+	port		: 5672,
+	user		: "guest",
+	password	: "guest",
+	vhost		: "/",
+	
 	element		: "AMQPProxy",
 	autoConnect	: true,
 
@@ -199,13 +204,18 @@ var MQ = {
 
 	connect: function() {
 		this.dispatch("connect", {
-			host: this.host
+			host	: this.host,
+			port	: this.port,
+			user	: this.user,
+			password: this.password,
+			vhost	: this.vhost
 		});
 	},
 
 	//private
 	onLoad: function() {
 		this.api = document.getElementById(this.element);
+		this.fireEvent("load");
 		this.update();
 		if(this.autoConnect) {
 			this.connect();
@@ -216,10 +226,12 @@ var MQ = {
 	onConnect: function() {
 		this.update();
 		this.flush();
+		this.fireEvent("connect");
 	},
 
 	//private
 	onDisconnect: function() {
+		this.fireEvent("disconnect");
 	},
 
 	//private
@@ -303,4 +315,6 @@ var MQ = {
 		}
 	}
 
-};
+});
+
+var MQ = new FlashAdaptor();
