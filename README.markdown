@@ -11,7 +11,11 @@
 * Documentation
 
 ##Firewall Note
-This will not work for computers behind a firewall blocking outoing traffic on port 843.  See below for details.
+This will not work for computers behind a firewall blocking outgoing traffic on port 843.  See below for details.
+
+If a firewall is blocking your access and you do not have permissions to modify it, you can still run the examples.
+Start up a local AMQP server (by default it listens on port 5672) and modify the examples to connect to your host.
+e.g. modify MQ.configure to use 'host: "localhost"'
 
 ##Javascript UPDATED API 9/26/09
 I rewrote the API with the requirement that the
@@ -111,7 +115,7 @@ AMQP Server
 	Qpid: http://qpid.apache.org/
 	ZeroMQ: http://www.zeromq.org/
 
-Web Server (Not Exactly True)
+Web Server (Not Exactly True; see Flash Policy section below)
 Basic understanding of message queues.
 
 
@@ -126,6 +130,19 @@ directory to get access to an example flash policy file, a python script to host
 and an init script to daemonize the flash policy server.  This is fully working on debian.
 Note:  the client's network must allow outgoing traffic on port 843 in order for any flash
 socket activity.
+
+If you prefer to do your development without running everything through a web server, the Flash plugin security 
+settings must be modified to allow local filesystem access. The Macromedia website has a page for accessing the
+Flash Settings Manager control panel. Visit this URL for access:
+http://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager.html
+
+Click on the Global Security Settings tab in the panel. I recommend adding a specific file path
+corresponding to the location of your development files. Click on the "Edit Locations..." drop-down menu,
+choose "Add Location" and browse to the directory containing your development files.
+
+If you want to run the examples, add /path/to/amqp-js/examples to the trusted locations. Once completed, you
+can open the examples directly without running them through a web server or starting up the policy server.
+
 
 
 ##Thanks
