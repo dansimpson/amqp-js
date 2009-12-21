@@ -6,8 +6,8 @@
 	<title>AMQP JS - Advanced Message Queue Protocol Javascript Client Implementaiton - Stocks</title>
 	<script src="../javascripts/mq.js" type="text/javascript"></script>
 	<script src="../javascripts/swfobject.js" type="text/javascript"></script>
-	<script src="./javascripts/mootools.js" type="text/javascript"></script>
-	<script src="./javascripts/snake.js" type="text/javascript"></script>
+	<script src="javascripts/mootools.js" type="text/javascript"></script>
+	<script src="javascripts/snake.js" type="text/javascript"></script>
 	
 	<style>
 		div.part {
@@ -40,19 +40,22 @@
 	});
 
 	swfobject.embedSWF(
-		"../swfs/amqp.swf",
+		"../swfs/amqp.swf?" + Math.random().toString(),
 		"AMQPProxy",
-		"1",
-		"1",
+		"10",
+		"10",
 		"9",
 		"../swfs/expressInstall.swf",
 		{},
 		{
 			allowScriptAccess: "always",
-			wmode: 'opaque',
-			bgcolor: '#ff0000'
+			wmode: "opaque",
+			bgcolor: "#ff0000"
 		},
-		{}
+		{},
+		function() {
+			//object loaded callback.. useful for debugging
+		}
 	);
 
 </script>
