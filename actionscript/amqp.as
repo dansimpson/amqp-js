@@ -28,6 +28,7 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.external.ExternalInterface;
+	import flash.net.LocalConnection;
 	import flash.system.Security;
 	
 	import org.ds.amqp.connection.Connection;
@@ -48,11 +49,11 @@ package {
 		
 		public function amqp()
 		{
+			Security.allowDomain("*");
+			Security.allowInsecureDomain("*");
+					
 			if(ExternalInterface.available) {
-				
-				Security.allowDomain("*");
-				Security.allowInsecureDomain("*");
-				
+
 				ExternalInterface.addCallback("connect", 		api_connect);
 				ExternalInterface.addCallback("disconnect", 	api_disconnect);
 				ExternalInterface.addCallback("exchange", 		api_declare_exchange);
@@ -68,6 +69,7 @@ package {
 	
 				ExternalInterface.call("MQ.onLoad");
 			}
+
 		}
 				
 				

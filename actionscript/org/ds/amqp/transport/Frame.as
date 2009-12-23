@@ -31,16 +31,19 @@ package org.ds.amqp.transport
 	import org.ds.amqp.protocol.Header;
 	import org.ds.amqp.protocol.Method;
 	import org.ds.amqp.protocol.Payload;
-	
+
 	public class Frame
 	{
+		public		var contentComplete	:Boolean	= false;
+		public		var headerComplete	:Boolean	= false;
+		public		var contentSize		:uint		= 0;
 
-		public		var type	:int 		= AMQP.FRAME_METHOD;
-		public		var channel	:int		= 0;
+		public		var type	:uint 		= AMQP.FRAME_METHOD;
+		public		var channel	:uint		= 0;
 		public 		var content	:Buffer		= null;
 		public		var valid	:Boolean	= true;
 		public		var payload	:Payload	= null;
-		
+
 		public function Frame(payLoad:Payload=null)
 		{
 			if(payLoad != null) {
@@ -48,9 +51,7 @@ package org.ds.amqp.transport
 				type	= payload.frameType;
 				content = payload.serialize();
 			}
-			
 		}
-		
 
 		//extracts the appropriate Method class from the frame
 		public function get method():Method {
@@ -67,7 +68,7 @@ package org.ds.amqp.transport
 		//build a header from buffer
 		public function get header():Header {
 			if(content != null && content.length > 0) {
-				
+
 				var header:Header = AMQP.getClass(content.readUnsignedShort());
 				if(header) {
 					header.deserialize(content);
@@ -76,7 +77,7 @@ package org.ds.amqp.transport
 			}
 			return null;
 		}
-		
+
 		//build a body object from the buffer
 		public function get body():Body {
 			if(content != null && content.length > 0) {

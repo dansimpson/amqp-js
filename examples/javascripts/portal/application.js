@@ -86,7 +86,7 @@ Ext.onReady(function() {
 	});*/
 	
 	swfobject.embedSWF(
-		"../swfs/amqp.swf",
+		"../swfs/amqp.swf?nc=" + Math.random().toString(),
 		"AMQPProxy",
 		"1",
 		"1",

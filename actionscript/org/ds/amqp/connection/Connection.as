@@ -181,6 +181,10 @@ package org.ds.amqp.connection
 				
 				var frame:Frame = stream.readFrame();
 				
+				if(frame == null) {
+					continue;
+				}
+				
 				if(frame.channel == 0) {
 					control.receive(frame);
 				} else {
