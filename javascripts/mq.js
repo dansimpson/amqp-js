@@ -93,7 +93,11 @@ Dispatcher.prototype = {
 */
 var Binding = extend(Dispatcher, function(queue, exchange, key) {
 	MQ.dispatch("bind", queue, exchange, key);
+	this.pattern = new RegExp("^" + key.replace('.','\.').replace('*','[^\.|$]+').replace('#','([^\.|$]+\.)+') + "$");
 }, {
+
+	pattern: null,
+
 	destroy: function() {
 		//not supported with AMQP 08, But 09
 	},
@@ -137,8 +141,7 @@ var Queue = extend(Dispatcher, function(opts) {
 		var ex = this.bindings[msg.exchange];
 		if(ex) {
 			for(var k in ex) {
-				var rk = new RegExp("^" + k.replace('.','\.').replace('*','[^\.|$]+').replace('#','([^\.|$]+\.)+') + "$");
-				if(rk.test(msg.routingKey)) {
+				if(ex[k].pattern.test(msg.routingKey)) {
 					match = true;
 					ex[k].fireEvent("rcv", msg);
 				}
