@@ -28,7 +28,6 @@ package {
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.external.ExternalInterface;
-	import flash.net.LocalConnection;
 	import flash.system.Security;
 	
 	import org.ds.amqp.connection.Connection;
@@ -61,6 +60,7 @@ package {
 				ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);
 				ExternalInterface.addCallback("publish",		api_publish);
 				ExternalInterface.addCallback("bind", 			api_bind);
+				ExternalInterface.addCallback("loadPolicy", 	api_load_policy);
 				ExternalInterface.addCallback("unbind", 		api_unbind);
 				ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
 	
@@ -71,8 +71,7 @@ package {
 			}
 
 		}
-				
-				
+								
 		private function api_connect(params:*):void {
 			
 			Logger.info("Attempting Connection");
@@ -81,8 +80,12 @@ package {
 			connection.addEventListener(Connection.READY, 	onConnect);
 			connection.addEventListener(Connection.CLOSED, 	onDisconnect);
 		}
-		
-				
+
+		private function api_load_policy(url:String):void {
+			Logger.info("Loading Policy File");
+			Security.loadPolicyFile(url);
+		}
+			
 		private function api_disconnect():void {
 			
 			Logger.info("Disconnecting");

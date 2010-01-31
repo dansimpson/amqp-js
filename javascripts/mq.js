@@ -191,6 +191,7 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 	
 	logger		: null,
 	logLevel	: 2,
+	policyUrl	: null,
 	
 	host		: "amqp.peermessaging.com",
 	port		: 5672,
@@ -298,6 +299,9 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 	update: function() {
 		if(this.logger) {
 			this.dispatch("setLogLevel", this.logLevel);
+		}
+		if(this.policyUrl) {
+			this.dispatch("loadPolicy", this.policyUrl);
 		}
 	},
 	
