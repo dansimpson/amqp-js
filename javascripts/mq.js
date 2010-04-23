@@ -136,7 +136,11 @@ var Queue = extend(Dispatcher, function(opts) {
 	},
 	
 	receive: function(msg) {
-	
+
+		if(this.queue == "auto") {
+			this.queue = MQ.dispatch("getAutoQueueName");
+		}
+
 		var match = false;
 		var ex = this.bindings[msg.exchange];
 		if(ex) {

@@ -63,7 +63,8 @@ package {
 				ExternalInterface.addCallback("loadPolicy", 	api_load_policy);
 				ExternalInterface.addCallback("unbind", 		api_unbind);
 				ExternalInterface.addCallback("setLogLevel", 	api_set_log_level);
-	
+				ExternalInterface.addCallback("getAutoQueueName", 	api_auto_queue_name);
+				
 				//allow all logged messages to pass down to javascript land
 				logger.addEventListener(LogEvent.ENTRY, onLogEntry);
 	
@@ -145,7 +146,12 @@ package {
 		private function api_send_method(klass:String, opts:*):void {
 		}		
 		
-		
+		private function api_auto_queue_name():String {
+			if(queues["auto"]) {
+				return queues["auto"].name;
+			}
+			return "auto";
+		}	
 
 		/**
 		 * Events to send to the client
