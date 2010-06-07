@@ -122,24 +122,33 @@ var Queue = extend(Dispatcher, function(opts) {
 	bind: function(exchange, key) {
 		key = key || "";
 		key += "";
+		
 		if (!MQ.exchanges[exchange]) {
 			var type = "";
 			if (!key.length) {
 				type = 'fanout';
-				}
-			else if (key.match(/[\*|#]/) ) {
+			}
+			else if ( key.match(/[\*|#]/) ) {
 				type = 'topic';
-				}
+			}
 			else {
 				type = 'direct';
-				};
-			MQ.exchange(exchange, {type: type});
 			};
+			MQ.exchange(exchange, {type: type});
+		};
 		
+		// No need to bind queue to an existing fanout exchange if the queue is already bound to this exchange.
+		if (MQ.exchanges[exchange].type == 'fanout' && this.bindings[exchange]) {
+			for (var k in this.bindings[exchange]) {
+				// Return first element
+				return this.bindings[exchange][k];
+			}
+		}
 	
 		if(!this.bindings[exchange]) {
 			this.bindings[exchange] = {}
 		}
+		
 		if(!this.bindings[exchange][key]) {
 			this.bindings[exchange][key] = new Binding(this.queue, exchange, key);
 		}
@@ -156,8 +165,24 @@ var Queue = extend(Dispatcher, function(opts) {
 		var match = false;
 		var ex = this.bindings[msg.exchange];
 		if(ex) {
-			for(var k in ex) {
-				if(ex[k].pattern.test(msg.routingKey)) {
+			var type = MQ.exchanges[msg.exchange].type;
+			if (type == 'fanout') {
+				for(var k in ex) {
+					match = true;
+					ex[k].fireEvent("rcv", msg);
+					break;
+				}
+			}
+			else if (type == 'direct') {
+				for(var k in ex) {
+					if (k == msg.routingKey) {
+						match = true;
+						ex[k].fireEvent("rcv", msg);
+						}
+				}
+			}
+			else {
+				if (ex[k].pattern.test(msg.routingKey)) {
 					match = true;
 					ex[k].fireEvent("rcv", msg);
 				}
@@ -307,7 +332,7 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 	createExchange: function(name, opts) {
 		this.exchanges[name] = new Exchange($extend({
 			exchange: name,
-			type	: "topic"
+			type	: opts.type || "fanout"
 		}, opts));
 	},
 	
