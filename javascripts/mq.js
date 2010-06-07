@@ -121,6 +121,7 @@ var Queue = extend(Dispatcher, function(opts) {
 	
 	bind: function(exchange, key) {
 		key = key || "";
+		key += "";
 		if (!MQ.exchanges[exchange]) {
 			var type = "";
 			if (!key.length) {
