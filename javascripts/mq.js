@@ -120,10 +120,21 @@ var Queue = extend(Dispatcher, function(opts) {
 	bindings: {},
 	
 	bind: function(exchange, key) {
-	
-		MQ.exchange(exchange);
-		
 		key = key || "";
+		if (!MQ.exchanges[exchange]) {
+			var type = "";
+			if (!key.length) {
+				type = 'fanout';
+				}
+			else if (key.match(/[\*|#]/) ) {
+				type = 'topic';
+				}
+			else {
+				type = 'direct';
+				};
+			MQ.exchange(exchange, {type: type});
+			};
+		
 	
 		if(!this.bindings[exchange]) {
 			this.bindings[exchange] = {}
