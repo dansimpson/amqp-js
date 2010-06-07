@@ -257,6 +257,10 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 		});
 	},
 
+	disconnect: function() {
+		this.dispatch("disconnect");
+	},
+	
 	//private
 	onLoad: function() {
 		this.api = document.getElementById(this.element);
