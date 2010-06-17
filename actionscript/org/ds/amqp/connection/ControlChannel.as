@@ -91,7 +91,6 @@ package org.ds.amqp.connection
 		}
 
         private function onClose(close:ConnectionClose):void {
-          	_stream.close();
           	Logger.log("Connection Closing unexpectedly!", close.replyCode, close.replyText);
         }
 	

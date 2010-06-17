@@ -164,6 +164,7 @@ package org.ds.amqp.connection
 		}
 				
 		protected function onClose(e:Event):void {
+			stream.close();
 			state = CLOSED;
 		}
 		
