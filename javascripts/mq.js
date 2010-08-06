@@ -182,10 +182,12 @@ var Queue = extend(Dispatcher, function(opts) {
 				}
 			}
 			else {
-				if (ex[k].pattern.test(msg.routingKey)) {
-					match = true;
-					ex[k].fireEvent("rcv", msg);
-				}
+                for(var k in ex) {
+				    if (ex[k].pattern.test(msg.routingKey)) {
+					    match = true;
+					    ex[k].fireEvent("rcv", msg);
+				    }
+                }
 			}
 		}
 		
