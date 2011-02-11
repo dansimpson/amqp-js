@@ -315,6 +315,15 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 		}, opts));
 	},
 
+	queue_delete: function(name, opts) {
+		if(!this.queues[name]) { return false };
+		delete this.queues[name];
+		if (!opts) {
+			opts = {ifUnused: false};
+			};
+		this.dispatch("queueDelete", name, opts);
+	},
+
 	topic: function(name) {
 		return this.exchange(name, { type: "topic" });
 	},

@@ -58,6 +58,7 @@ package {
 				ExternalInterface.addCallback("exchange", 		api_declare_exchange);
 				ExternalInterface.addCallback("subscribe", 		api_subscribe);
 				ExternalInterface.addCallback("unsubscribe", 	api_unsubscribe);
+				ExternalInterface.addCallback("queueDelete", 	api_queue_delete);
 				ExternalInterface.addCallback("publish",		api_publish);
 				ExternalInterface.addCallback("bind", 			api_bind);
 				ExternalInterface.addCallback("loadPolicy", 	api_load_policy);
@@ -108,6 +109,12 @@ package {
 			}
 		}
 		
+		private function api_queue_delete(queue:String,opts:*):void {
+			if(queues[queue]) {
+				(queues[queue] as Queue).destroy(opts);
+				delete queues[queue];
+			}
+		}
 				
 		private function api_publish(exchange:String, routingKey:String, payload:*):void {
 			var ex:Exchange = exchanges[exchange];

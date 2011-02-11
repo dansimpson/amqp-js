@@ -70,6 +70,14 @@ Configure the AMQP client and do work
 		alert("fooFanout message received");
 	});
 
+	//delete a queue
+	MQ.queue_delete("queueName", options);
+
+	// options is an optional hash respecting the following keys:
+	// ifUnused: If set, the server will only delete the queue if it has no consumers (default false).
+
+	// Example:
+	// MQ.queue_delete("my_queue", {ifUnused: true});
 
 	//publish a message to an exchange
 	MQ.topic("fooTopic").publish({ foo: "bar" }, "foo.bang.bar");

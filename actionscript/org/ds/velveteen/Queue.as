@@ -96,11 +96,11 @@ package org.ds.velveteen
 			state = UNSUBSCRIBED;
 		}
 		
-		public function destroy():void {
+		public function destroy(options:*=null):void {
 			var dest:QueueDelete = new QueueDelete();
 			
 			dest.queue = queue;
-			dest.ifUnused = true;
+			dest.ifUnused = options.ifUnused || false;
 			
 			channel.send(dest, onDestroy);
 		}
