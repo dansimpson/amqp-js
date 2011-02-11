@@ -87,7 +87,7 @@ package org.ds.amqp.protocol.headers
 		public var headers                 :FieldTable;
 
 		//
-		public var deliveryMode            :uint;
+		public var deliveryMode            :uint = 1;
 
 		//
 		public var priority                :uint;

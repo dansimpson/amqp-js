@@ -17,7 +17,7 @@ If a firewall is blocking your access and you do not have permissions to modify 
 Start up a local AMQP server (by default it listens on port 5672) and modify the examples to connect to your host.
 e.g. modify MQ.configure to use 'host: "localhost"'
 
-##Javascript UPDATED API 9/26/09
+##Javascript UPDATED API 2/11/11
 I rewrote the API with the requirement that the
 programmer does not have to deal with execution order.  There are some caveats,
 but the model allows for very consise and simple implementation.
