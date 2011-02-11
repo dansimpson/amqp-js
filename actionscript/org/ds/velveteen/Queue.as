@@ -101,6 +101,8 @@ package org.ds.velveteen
 			
 			dest.queue = queue;
 			dest.ifUnused = options.ifUnused || false;
+			dest.ifEmpty = options.ifEmpty || false;
+			dest.nowait = options.nowait || false;
 			
 			channel.send(dest, onDestroy);
 		}

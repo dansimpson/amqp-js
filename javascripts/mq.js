@@ -318,9 +318,7 @@ var FlashAdaptor = extend(Dispatcher, function(){}, {
 	queue_delete: function(name, opts) {
 		if(!this.queues[name]) { return false };
 		delete this.queues[name];
-		if (!opts) {
-			opts = {ifUnused: false};
-			};
+		if (!opts) { opts = {} };
 		this.dispatch("queueDelete", name, opts);
 	},
 

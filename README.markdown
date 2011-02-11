@@ -74,7 +74,11 @@ Configure the AMQP client and do work
 	MQ.queue_delete("queueName", options);
 
 	// options is an optional hash respecting the following keys:
-	// ifUnused: If set, the server will only delete the queue if it has no consumers (default false).
+	var options = {
+		ifUnused: true, /* (default false). If set to true, the server will only delete the queue if it has no consumers . */
+		ifEmpty: true, /* (default false). If set to true, the server will only delete the queue if it has no messages */
+		nowait: true /* (default false) */
+	};
 
 	// Example:
 	// MQ.queue_delete("my_queue", {ifUnused: true});
