@@ -160,37 +160,41 @@ var Queue = extend(Dispatcher, function(opts) {
 			this.queue = MQ.dispatch("getAutoQueueName");
 		}
 
-		var match = false,
-		    ex = this.bindings[msg.exchange];
+		if (MQ.onReceiveHandler == "queue") {
+			this.fireEvent("rcv", msg);
+		} else {
+			var match = false;
+			var ex = this.bindings[msg.exchange];
 		    
-		if (ex) {
-			var type = MQ.exchanges[msg.exchange].type;
-			if (type == 'fanout') {
-				for (var k in ex) {
-					match = true;
-					ex[k].fireEvent("rcv", msg);
-					break;
-				}
-			} else if (type == 'direct') {
-				for (var k in ex) {
-					if (k == msg.routingKey) {
+			if (ex) {
+				var type = MQ.exchanges[msg.exchange].type;
+				if (type == 'fanout') {
+					for (var k in ex) {
 						match = true;
 						ex[k].fireEvent("rcv", msg);
+						break;
 					}
-				}
-			} else {
-				for (var k in ex) {
-					if (ex[k].pattern.test(msg.routingKey)) {
-						match = true;
-						ex[k].fireEvent("rcv", msg);
+				} else if (type == 'direct') {
+					for (var k in ex) {
+						if (k == msg.routingKey) {
+							match = true;
+							ex[k].fireEvent("rcv", msg);
+						}
+					}
+				} else {
+					for (var k in ex) {
+						if (ex[k].pattern.test(msg.routingKey)) {
+							match = true;
+							ex[k].fireEvent("rcv", msg);
+						}
 					}
 				}
 			}
-		}
 
-		//default to the queue callback
-		if (!match) {
-			this.fireEvent("rcv", msg);
+			//default to the queue callback
+			if (!match) {
+				this.fireEvent("rcv", msg);
+			}
 		}
 	},
 
@@ -238,6 +242,8 @@ var FlashAdaptor = extend(Dispatcher, function() {},
 
 	element: "AMQPProxy",
 	autoConnect: true,
+	
+	onReceiveHandler: "binding",
 
 	configure: function(settings) {
 		$extend(this, settings);

@@ -37,6 +37,8 @@ Configure the AMQP client and do work
 	MQ.configure({
 		//enable logging to the console
 		//logger: console,
+		// to get better performance set
+		//onReceiveHandler: "queue",
 		host: "amqp.peermessaging.com"
 	});
 
