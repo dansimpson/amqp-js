@@ -109,6 +109,7 @@ package org.ds.velveteen
 		
 		public function onDestroy(ok:QueueDeleteOk):void {
 			state = DELETED;
+			channel.close();
 		}
 		
 		public function bind(exchange:Exchange, routingKey:String="", callback:Function=null):void {
