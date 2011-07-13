@@ -17,7 +17,7 @@ If a firewall is blocking your access and you do not have permissions to modify 
 Start up a local AMQP server (by default it listens on port 5672) and modify the examples to connect to your host.
 e.g. modify MQ.configure to use 'host: "localhost"'
 
-##Javascript UPDATED API 2/11/11
+##Javascript UPDATED API February 16, 2011
 I rewrote the API with the requirement that the
 programmer does not have to deal with execution order.  There are some caveats,
 but the model allows for very consise and simple implementation.
@@ -37,6 +37,8 @@ Configure the AMQP client and do work
 	MQ.configure({
 		//enable logging to the console
 		//logger: console,
+		// to get better performance set
+		//onReceiveHandler: "queue",
 		host: "amqp.peermessaging.com"
 	});
 
@@ -71,7 +73,7 @@ Configure the AMQP client and do work
 	});
 
 	//delete a queue
-	MQ.queue_delete("queueName", options);
+	MQ.deleteQueue("queueName", options);
 
 	// options is an optional hash respecting the following keys:
 	var options = {
@@ -81,7 +83,7 @@ Configure the AMQP client and do work
 	};
 
 	// Example:
-	// MQ.queue_delete("my_queue", {ifUnused: true});
+	// MQ.deleteQueue("my_queue", {ifUnused: true});
 
 	//publish a message to an exchange
 	MQ.topic("fooTopic").publish({ foo: "bar" }, "foo.bang.bar");

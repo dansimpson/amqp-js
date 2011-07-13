@@ -5,6 +5,8 @@ package org.ds.amqp.connection
 	import org.ds.amqp.protocol.Method;
 	import org.ds.amqp.protocol.channel.ChannelOpen;
 	import org.ds.amqp.protocol.channel.ChannelOpenOk;
+	import org.ds.amqp.protocol.channel.ChannelClose;
+	import org.ds.amqp.protocol.channel.ChannelCloseOk;
 	import org.ds.amqp.transport.Frame;
 	import org.ds.fsm.StateMachine;
 	import org.ds.logging.Logger;
@@ -35,6 +37,10 @@ package org.ds.amqp.connection
 		
 		public function open():void {
 			write(new ChannelOpen(), onChannelOpen);
+		}
+
+		public function close():void {
+			write(new ChannelClose(), onChannelClose);
 		}
 		
 		public function send(method:Method, cb:Function=null):void {
@@ -192,6 +198,10 @@ package org.ds.amqp.connection
 		
 		protected function onChannelOpen(cok:ChannelOpenOk):void {
 			state = "OPEN";
+		}
+
+		protected function onChannelClose(cok:ChannelCloseOk):void {
+			state = "CLOSED";
 		}
 
 
