@@ -1,6 +1,8 @@
 package org.ds.amqp.protocol
 {
-	import com.adobe.serialization.json.JSON;
+	// import com.adobe.serialization.json.JSON;
+	import com.brokenfunction.json.decodeJson;
+	import com.brokenfunction.json.encodeJson;
 	
 	import org.ds.amqp.AMQP;
 	import org.ds.amqp.transport.Buffer;
@@ -27,11 +29,15 @@ package org.ds.amqp.protocol
 		}
 		
 		public function get data():* {
-			return JSON.decode(_data);
+			// return JSON.decode(_data);
+			// return JSON.parse(_data);
+			return decodeJson(_data);
 		}
 		
 		public function set data(data:*):void {
-			_data = JSON.encode(data);
+			// _data = JSON.encode(data);
+			// _data = JSON.stringify(data);
+			_data = encodeJson(data);
 		}
 		
 		public function get length():uint {
